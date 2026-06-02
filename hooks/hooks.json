@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "npx patchright-mcp@latest --help >/dev/null 2>&1 || echo '[SuperResume] Patchright MCP is not installed. The browser skill requires it. Run: npx patchright install chromium'"
+          }
+        ]
+      }
+    ]
+  }
+}

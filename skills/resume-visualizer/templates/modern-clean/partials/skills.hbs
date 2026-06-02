@@ -1,0 +1,87 @@
+{{#if skills}}
+<div class="resume-section">
+  <div class="section-title">Skills</div>
+  <div class="skills-grid">
+    {{#if skills.programming_languages}}
+    <div class="skill-category">
+      <span class="skill-label">Languages</span>
+      <span class="skill-tags">
+        {{#each skills.programming_languages}}
+        <span class="skill-tag">{{this}}</span>
+        {{/each}}
+      </span>
+    </div>
+    {{/if}}
+    {{#if skills.frameworks}}
+    <div class="skill-category">
+      <span class="skill-label">Frameworks</span>
+      <span class="skill-tags">
+        {{#each skills.frameworks}}
+        <span class="skill-tag">{{this}}</span>
+        {{/each}}
+      </span>
+    </div>
+    {{/if}}
+    {{#if skills.databases}}
+    <div class="skill-category">
+      <span class="skill-label">Databases</span>
+      <span class="skill-tags">
+        {{#each skills.databases}}
+        <span class="skill-tag">{{this}}</span>
+        {{/each}}
+      </span>
+    </div>
+    {{/if}}
+    {{#if skills.tools}}
+    <div class="skill-category">
+      <span class="skill-label">Tools</span>
+      <span class="skill-tags">
+        {{#each skills.tools}}
+        <span class="skill-tag">{{this}}</span>
+        {{/each}}
+      </span>
+    </div>
+    {{/if}}
+    {{#if skills.platforms}}
+    <div class="skill-category">
+      <span class="skill-label">Platforms</span>
+      <span class="skill-tags">
+        {{#each skills.platforms}}
+        <span class="skill-tag">{{this}}</span>
+        {{/each}}
+      </span>
+    </div>
+    {{/if}}
+    {{#if skills.methodologies}}
+    <div class="skill-category">
+      <span class="skill-label">Methodologies</span>
+      <span class="skill-tags">
+        {{#each skills.methodologies}}
+        <span class="skill-tag">{{this}}</span>
+        {{/each}}
+      </span>
+    </div>
+    {{/if}}
+    {{#if skills.domain_skills}}
+    <div class="skill-category">
+      <span class="skill-label">Domain</span>
+      <span class="skill-tags">
+        {{#each skills.domain_skills}}
+        <span class="skill-tag">{{this}}</span>
+        {{/each}}
+      </span>
+    </div>
+    {{/if}}
+    {{#if skills.soft_skills}}
+    <div class="skill-category">
+      <span class="skill-label">Soft Skills</span>
+      <span class="skill-tags">
+        {{#each skills.soft_skills}}
+        <span class="skill-tag">{{this}}</span>
+        {{/each}}
+      </span>
+    </div>
+    {{/if}}
+  </div>
+</div>
+{{/if}}

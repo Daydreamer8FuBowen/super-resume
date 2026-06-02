@@ -1,0 +1,21 @@
+<div class="entry">
+  <div class="entry-header">
+    <span class="entry-title">{{#if degree}}{{degree}}{{/if}}{{#if major}} in {{major}}{{/if}}</span>
+    <span class="entry-dates">
+      {{#if start_date}}{{start_date}}{{/if}}
+      {{#if end_date}} – {{end_date}}{{/if}}
+    </span>
+  </div>
+  <div class="entry-sub">
+    {{#if school}}{{school}}{{/if}}
+    {{#if location}} · {{location}}{{/if}}
+    {{#if gpa}} · GPA {{gpa}}{{/if}}
+  </div>
+  {{#if honors}}
+  <ul class="entry-bullets">
+    {{#each honors}}
+    <li>{{this}}</li>
+    {{/each}}
+  </ul>
+  {{/if}}
+</div>

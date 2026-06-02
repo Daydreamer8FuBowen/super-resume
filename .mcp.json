@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "patchright": {
+      "command": "npx",
+      "args": ["patchright-mcp@latest"]
+    }
+  }
+}

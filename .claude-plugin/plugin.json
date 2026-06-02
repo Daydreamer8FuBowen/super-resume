@@ -1,0 +1,11 @@
+{
+  "name": "super-resume",
+  "version": "1.0.0",
+  "description": "SuperResume - A Claude Code plugin to help users craft better resumes. Provides skills for resume writing, critique, formatting, and tailoring to specific job descriptions.",
+  "author": {
+    "name": "FuBowen"
+  },
+  "keywords": ["resume", "career", "job-search", "cv"],
+  "skills": "./skills/",
+  "hooks": "./hooks/hooks.json"
+}

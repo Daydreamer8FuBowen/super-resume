@@ -1,0 +1,21 @@
+# Generated resume HTML files
+resume-preview.html
+*-preview.html
+test-preview.html
+
+# Superpowers brainstorming artifacts
+.superpowers/
+
+# Local Claude Code settings
+.claude/
+
+# IDE
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/

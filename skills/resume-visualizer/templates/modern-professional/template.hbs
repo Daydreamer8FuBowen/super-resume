@@ -1,0 +1,95 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{personal_info.full_name}} — Resume</title>
+  <style>{{{style}}}</style>
+</head>
+<body>
+  <div class="resume-page">
+
+    {{> header}}
+
+    <div class="resume-body">
+      <!-- Left Sidebar -->
+      <aside class="resume-sidebar">
+        {{> sidebar}}
+      </aside>
+
+      <!-- Right Main Content -->
+      <main class="resume-main">
+
+        {{#if career_objective.summary_facts}}
+        <div class="resume-section">
+          <div class="section-title">Summary</div>
+          <div class="resume-summary">
+            {{#each career_objective.summary_facts}}
+            <p>{{this}}</p>
+            {{/each}}
+          </div>
+        </div>
+        {{/if}}
+
+        {{#if work_experience}}
+        <div class="resume-section">
+          <div class="section-title">Experience</div>
+          {{#each work_experience}}
+          {{> experience-item}}
+          {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if internships}}
+        <div class="resume-section">
+          <div class="section-title">Internships</div>
+          {{#each internships}}
+          {{> experience-item}}
+          {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if projects}}
+        <div class="resume-section">
+          <div class="section-title">Projects</div>
+          {{#each projects}}
+          {{> project-item}}
+          {{/each}}
+        </div>
+        {{/if}}
+
+        {{#if certifications}}
+        <div class="resume-section">
+          <div class="section-title">Certifications</div>
+          <ul class="simple-list">
+          {{#each certifications}}
+            <li>
+              <strong>{{name}}</strong>
+              {{#if issuer}} — {{issuer}}{{/if}}
+              {{#if date}} ({{date}}){{/if}}
+            </li>
+          {{/each}}
+          </ul>
+        </div>
+        {{/if}}
+
+        {{#if awards}}
+        <div class="resume-section">
+          <div class="section-title">Awards</div>
+          <ul class="simple-list">
+          {{#each awards}}
+            <li>
+              <strong>{{name}}</strong>{{#if issuer}} — {{issuer}}{{/if}}
+              {{#if date}} ({{date}}){{/if}}
+              {{#if description}}<br><span class="muted">{{description}}</span>{{/if}}
+            </li>
+          {{/each}}
+          </ul>
+        </div>
+        {{/if}}
+
+      </main>
+    </div>
+
+  </div>
+</body>
+</html>

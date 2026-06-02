@@ -1,0 +1,447 @@
+/* ============================================
+   Modern Clean — Resume Template Styles
+   CSS Custom Properties for easy theming
+   ============================================ */
+
+:root {
+  /* Colors */
+  --color-primary: #1a1a2e;
+  --color-accent: #2d6a9f;
+  --color-body: #333333;
+  --color-muted: #666666;
+  --color-light: #888888;
+  --color-tag-bg: #eef1f5;
+  --color-tag-text: #445566;
+  --color-border: #e0e0e0;
+  --color-section-line: #1a1a2e;
+  --color-bg: #ffffff;
+
+  /* Typography */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans SC", sans-serif;
+  --font-mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", monospace;
+
+  /* Sizes */
+  --font-name: 22px;
+  --font-headline: 14px;
+  --font-section: 11px;
+  --font-role: 12px;
+  --font-company: 11px;
+  --font-body: 10px;
+  --font-small: 9px;
+  --font-links: 10px;
+
+  /* Spacing */
+  --page-width: 780px;
+  --page-padding: 40px;
+  --section-gap: 18px;
+  --entry-gap: 12px;
+  --bullet-gap: 3px;
+
+  /* Print */
+  --print-page-width: 210mm;
+  --print-margin: 15mm;
+}
+
+/* ============================================
+   Reset & Base
+   ============================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-body);
+  background: #f5f5f5;
+  line-height: 1.5;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+/* ============================================
+   Page Container
+   ============================================ */
+
+.resume-page {
+  width: 100%;
+  max-width: var(--page-width);
+  background: var(--color-bg);
+  padding: var(--page-padding);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+.resume-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 18px;
+  margin-bottom: var(--section-gap);
+  border-bottom: 2px solid var(--color-section-line);
+}
+
+.header-photo {
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--color-border);
+}
+
+.header-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.header-text {
+  flex: 1;
+  text-align: center;
+  min-width: 0;
+}
+
+/* Center text when no photo (full width) */
+.resume-header:not(:has(.header-photo)) .header-text {
+  /* already centered */;
+}
+
+.resume-header .name {
+  font-size: var(--font-name);
+  font-weight: 700;
+  color: var(--color-primary);
+  letter-spacing: 0.02em;
+  margin-bottom: 2px;
+}
+
+.resume-header .headline {
+  font-size: var(--font-headline);
+  color: var(--color-muted);
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+
+.resume-header .contact {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 16px;
+  font-size: var(--font-links);
+  color: var(--color-light);
+}
+
+.resume-header .contact a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.resume-header .contact a:hover {
+  text-decoration: underline;
+}
+
+.resume-header .contact .sep {
+  color: var(--color-border);
+  user-select: none;
+}
+
+/* ============================================
+   Sections
+   ============================================ */
+
+.resume-section {
+  margin-bottom: var(--section-gap);
+}
+
+.resume-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-size: var(--font-section);
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* ============================================
+   Summary
+   ============================================ */
+
+.resume-summary p {
+  font-size: var(--font-body);
+  color: var(--color-muted);
+  line-height: 1.6;
+}
+
+.resume-summary p + p {
+  margin-top: 4px;
+}
+
+/* ============================================
+   Skills
+   ============================================ */
+
+.skills-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.skill-category {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: var(--font-body);
+}
+
+.skill-category .skill-label {
+  font-weight: 600;
+  color: var(--color-primary);
+  white-space: nowrap;
+  min-width: 120px;
+  font-size: var(--font-small);
+}
+
+.skill-category .skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.skill-tag {
+  display: inline-block;
+  background: var(--color-tag-bg);
+  color: var(--color-tag-text);
+  padding: 1px 8px;
+  border-radius: 3px;
+  font-size: var(--font-small);
+  font-weight: 500;
+}
+
+/* ============================================
+   Experience / Internship / Project Items
+   ============================================ */
+
+.entry {
+  margin-bottom: var(--entry-gap);
+}
+
+.entry:last-child {
+  margin-bottom: 0;
+}
+
+.entry-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1px;
+}
+
+.entry-header .entry-title {
+  font-size: var(--font-role);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.entry-header .entry-dates {
+  font-size: var(--font-small);
+  color: var(--color-light);
+  white-space: nowrap;
+}
+
+.entry-subheader {
+  font-size: var(--font-company);
+  color: var(--color-muted);
+  margin-bottom: 4px;
+}
+
+.entry-subheader .location {
+  color: var(--color-light);
+}
+
+.entry-bullets {
+  list-style: none;
+  padding: 0;
+}
+
+.entry-bullets li {
+  position: relative;
+  padding-left: 14px;
+  font-size: var(--font-body);
+  color: var(--color-body);
+  line-height: 1.55;
+  margin-bottom: var(--bullet-gap);
+}
+
+.entry-bullets li::before {
+  content: "•";
+  position: absolute;
+  left: 2px;
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+.entry-tech {
+  font-size: var(--font-small);
+  color: var(--color-muted);
+  margin-top: 3px;
+  font-style: italic;
+}
+
+/* ============================================
+   Projects (slightly different styling)
+   ============================================ */
+
+.entry-project .entry-bullets li {
+  font-size: var(--font-body);
+}
+
+.entry-project .entry-tech {
+  margin-top: 3px;
+}
+
+/* ============================================
+   Education
+   ============================================ */
+
+.education-item {
+  margin-bottom: var(--entry-gap);
+}
+
+.education-item:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   Certifications, Awards, Languages
+   ============================================ */
+
+.cert-list,
+.award-list,
+.lang-list {
+  list-style: none;
+  padding: 0;
+  font-size: var(--font-body);
+  color: var(--color-body);
+  line-height: 1.6;
+}
+
+.cert-list li,
+.award-list li,
+.lang-list li {
+  padding: 2px 0;
+}
+
+.cert-name {
+  font-weight: 600;
+}
+
+.cert-issuer {
+  color: var(--color-muted);
+}
+
+.award-item .award-date,
+.lang-item .lang-proficiency {
+  color: var(--color-light);
+  font-size: var(--font-small);
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+
+@media print {
+  html {
+    font-size: 12px;
+  }
+
+  body {
+    background: white;
+    padding: 0;
+  }
+
+  .resume-page {
+    max-width: 100%;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 0;
+  }
+
+  @page {
+    size: A4;
+    margin: var(--print-margin);
+  }
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media screen and (max-width: 840px) {
+  body {
+    padding: 10px;
+  }
+
+  .resume-page {
+    padding: 24px;
+  }
+
+  :root {
+    --font-name: 20px;
+    --font-headline: 13px;
+  }
+}
+
+@media screen and (max-width: 500px) {
+  .resume-page {
+    padding: 16px;
+  }
+
+  .resume-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .header-photo {
+    width: 56px;
+    height: 56px;
+  }
+
+  .entry-header {
+    flex-direction: column;
+  }
+
+  .skill-category {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .resume-header .contact {
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .contact .sep {
+    display: none;
+  }
+}

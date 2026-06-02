@@ -1,0 +1,250 @@
+{
+  "schema_version": "1.0.0",
+  "profile_type": "base",
+  "profile_id": "base",
+  "last_updated": "2026-05-15",
+  "personal_info": {
+    "full_name": "付博闻",
+    "preferred_name": "Bowen Fu",
+    "headline": "Full-Stack Developer",
+    "photo": "",
+    "location": "Shanghai, China",
+    "phone": "138-0000-1234",
+    "email": "fubowen@example.com",
+    "links": {
+      "github": "https://github.com/zhangsan",
+      "linkedin": "https://linkedin.com/in/zhangsan",
+      "portfolio": "https://zhangsan.dev",
+      "website": null,
+      "other": []
+    }
+  },
+  "career_objective": {
+    "target_roles": ["Senior Full-Stack Developer", "Tech Lead"],
+    "target_industries": ["SaaS", "Developer Tools", "AI/ML"],
+    "summary_facts": [
+      "Full-stack developer with 5+ years of experience building web applications and developer tools",
+      "Proficient in React, Node.js, TypeScript, and Python. Strong advocate for clean code and developer experience",
+      "Led migration from monolith to microservices, serving 200+ internal engineers"
+    ]
+  },
+  "education": [
+    {
+      "id": "edu-001",
+      "school": "Peking University",
+      "degree": "Bachelor of Science",
+      "major": "Computer Science",
+      "minor": null,
+      "location": "Beijing, China",
+      "start_date": "2018-09",
+      "end_date": "2022-06",
+      "gpa": 3.8,
+      "courses": ["Data Structures", "Algorithms", "Operating Systems", "Database Systems"],
+      "honors": ["Dean's List 2020-2022", "Outstanding Graduate"],
+      "activities": ["ACM Programming Contest - Silver Medal"],
+      "source_notes": []
+    }
+  ],
+  "work_experience": [
+    {
+      "id": "work-001",
+      "company": "TechCorp Inc.",
+      "role": "Senior Full-Stack Developer",
+      "employment_type": "Full-time",
+      "location": "Shanghai, China",
+      "start_date": "2024-03",
+      "end_date": null,
+      "is_current": true,
+      "team": "Developer Platform",
+      "business_context": "Internal developer platform team serving 200+ engineers across the company",
+      "responsibilities": [
+        "Architect and build internal developer platform",
+        "Lead frontend architecture decisions and code reviews",
+        "Mentor junior developers"
+      ],
+      "achievements": [
+        {
+          "claim": "Reduced deployment time",
+          "metric": "60%",
+          "evidence": "Measured across 50+ microservices over 6 months",
+          "technologies": ["Docker", "Kubernetes", "Node.js"],
+          "confidence": "high"
+        },
+        {
+          "claim": "Built internal developer portal",
+          "metric": "200+ daily active engineers",
+          "evidence": "Usage analytics from internal dashboard",
+          "technologies": ["React", "TypeScript", "GraphQL"],
+          "confidence": "high"
+        },
+        {
+          "claim": "Improved API response time through query optimization",
+          "metric": "40% faster",
+          "evidence": "APM monitoring data before/after",
+          "technologies": ["PostgreSQL", "Redis", "Node.js"],
+          "confidence": "high"
+        }
+      ],
+      "source_notes": []
+    },
+    {
+      "id": "work-002",
+      "company": "StartupXYZ",
+      "role": "Software Engineer",
+      "employment_type": "Full-time",
+      "location": "Beijing, China",
+      "start_date": "2022-07",
+      "end_date": "2024-02",
+      "is_current": false,
+      "team": "Product Engineering",
+      "business_context": "B2B SaaS startup, 30-person engineering team",
+      "responsibilities": [
+        "Develop customer-facing dashboard and API services",
+        "Own the frontend build pipeline and component library",
+        "Collaborate with product and design on feature planning"
+      ],
+      "achievements": [
+        {
+          "claim": "Built the customer analytics dashboard from scratch",
+          "metric": "adopted by 50+ enterprise clients",
+          "evidence": "Customer success reports",
+          "technologies": ["React", "D3.js", "Node.js", "PostgreSQL"],
+          "confidence": "high"
+        },
+        {
+          "claim": "Established frontend testing infrastructure",
+          "metric": "pushed code coverage from 10% to 85%",
+          "evidence": "CI/CD coverage reports",
+          "technologies": ["Jest", "Testing Library", "Cypress"],
+          "confidence": "high"
+        }
+      ],
+      "source_notes": []
+    }
+  ],
+  "internships": [
+    {
+      "id": "intern-001",
+      "company": "BigTech Co.",
+      "role": "Software Engineering Intern",
+      "location": "Shenzhen, China",
+      "start_date": "2021-06",
+      "end_date": "2021-09",
+      "responsibilities": [
+        "Developed internal tools for the infrastructure team",
+        "Participated in code reviews and sprint planning"
+      ],
+      "achievements": [
+        {
+          "claim": "Automated server provisioning workflow",
+          "metric": "saved 10+ hours per week for ops team",
+          "technologies": ["Python", "Ansible", "Linux"],
+          "source_notes": []
+        }
+      ],
+      "technologies": ["Python", "Ansible", "Linux", "Docker"],
+      "source_notes": []
+    }
+  ],
+  "projects": [
+    {
+      "id": "project-001",
+      "name": "SuperResume",
+      "type": "Open Source Tool",
+      "role": "Creator & Maintainer",
+      "start_date": "2025-12",
+      "end_date": null,
+      "context": "Personal project to help developers craft better resumes using AI",
+      "problem": "Existing resume tools lack structured data persistence and AI-assisted tailoring",
+      "actions": [
+        "Designed the plugin architecture with skill-based modular system",
+        "Built browser automation skill for job research",
+        "Implemented profile-loader for structured resume JSON persistence"
+      ],
+      "results": ["Open-sourced with documentation", "Supports multi-language resume profiles"],
+      "metrics": [],
+      "technologies": ["Node.js", "Claude API", "Playwright", "React"],
+      "links": ["https://github.com/zhangsan/super-resume"],
+      "source_notes": []
+    },
+    {
+      "id": "project-002",
+      "name": "Campus Marketplace App",
+      "type": "Side Project",
+      "role": "Frontend Lead",
+      "start_date": "2020-03",
+      "end_date": "2020-08",
+      "context": "University club project",
+      "problem": "Students needed a simple way to buy/sell used items on campus",
+      "actions": [
+        "Led a team of 3 frontend developers",
+        "Designed UI/UX and implemented the product listing flow",
+        "Integrated WeChat Pay for transactions"
+      ],
+      "results": ["Launched to 5,000+ campus users", "Processed 2,000+ transactions in first month"],
+      "metrics": ["5,000+ users", "2,000+ transactions"],
+      "technologies": ["Vue.js", "Spring Boot", "MySQL", "WeChat SDK"],
+      "links": [],
+      "source_notes": []
+    }
+  ],
+  "skills": {
+    "programming_languages": ["JavaScript", "TypeScript", "Python", "Java", "SQL"],
+    "frameworks": ["React", "Vue.js", "Node.js", "Express", "Next.js"],
+    "tools": ["Git", "Docker", "Webpack", "Vite", "Jest", "Cypress"],
+    "platforms": ["AWS", "Vercel", "Linux"],
+    "databases": ["PostgreSQL", "MySQL", "MongoDB", "Redis"],
+    "methodologies": ["Agile", "Scrum", "TDD", "CI/CD"],
+    "domain_skills": ["Developer Tools", "SaaS", "Internal Platforms"],
+    "soft_skills": ["Technical Writing", "Mentoring", "Cross-team Communication"]
+  },
+  "certifications": [
+    {
+      "id": "cert-001",
+      "name": "AWS Solutions Architect Associate",
+      "issuer": "Amazon Web Services",
+      "date": "2023-06",
+      "expiry_date": "2026-06",
+      "credential_id": "AWS-SAA-12345",
+      "url": null,
+      "source_notes": []
+    }
+  ],
+  "awards": [
+    {
+      "id": "award-001",
+      "name": "Best Innovation Project",
+      "issuer": "TechCorp Inc. Annual Hackathon",
+      "date": "2025-01",
+      "description": "Won first place for an AI-powered code review assistant prototype",
+      "source_notes": []
+    }
+  ],
+  "languages": [
+    {
+      "language": "Chinese",
+      "proficiency": "Native",
+      "evidence": null
+    },
+    {
+      "language": "English",
+      "proficiency": "Professional Working (IELTS 7.5)",
+      "evidence": "IELTS 7.5 (2024)"
+    }
+  ],
+  "publications": [],
+  "portfolio": [],
+  "resume_preferences": {
+    "preferred_language": "en",
+    "resume_length": "one-page",
+    "tone": "professional",
+    "constraints": ["No photo", "No date of birth"],
+    "avoid": ["Personal pronouns", "References available upon request"]
+  },
+  "raw_sources": [],
+  "metadata": {
+    "created_at": "2025-05-01",
+    "updated_at": "2026-05-15",
+    "notes": []
+  }
+}

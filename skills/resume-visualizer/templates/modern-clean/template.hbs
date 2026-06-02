@@ -1,0 +1,107 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{personal_info.full_name}} — Resume</title>
+  <style>{{{style}}}</style>
+</head>
+<body>
+  <div class="resume-page">
+
+    {{> header}}
+
+    {{#if career_objective.summary_facts}}
+    <div class="resume-section resume-summary">
+      <div class="section-title">Summary</div>
+      {{#each career_objective.summary_facts}}
+      <p>{{this}}</p>
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{> skills}}
+
+    {{#if work_experience}}
+    <div class="resume-section">
+      <div class="section-title">Experience</div>
+      {{#each work_experience}}
+      {{> experience-item}}
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if internships}}
+    <div class="resume-section">
+      <div class="section-title">Internships</div>
+      {{#each internships}}
+      {{> experience-item}}
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if projects}}
+    <div class="resume-section">
+      <div class="section-title">Projects</div>
+      {{#each projects}}
+      {{> project-item}}
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if education}}
+    <div class="resume-section">
+      <div class="section-title">Education</div>
+      {{#each education}}
+      {{> education-item}}
+      {{/each}}
+    </div>
+    {{/if}}
+
+    {{#if certifications}}
+    <div class="resume-section">
+      <div class="section-title">Certifications</div>
+      <ul class="cert-list">
+      {{#each certifications}}
+        <li>
+          <span class="cert-name">{{name}}</span>
+          {{#if issuer}}<span class="cert-issuer"> — {{issuer}}</span>{{/if}}
+          {{#if date}}<span class="award-date"> ({{date}})</span>{{/if}}
+        </li>
+      {{/each}}
+      </ul>
+    </div>
+    {{/if}}
+
+    {{#if awards}}
+    <div class="resume-section">
+      <div class="section-title">Awards</div>
+      <ul class="award-list">
+      {{#each awards}}
+        <li class="award-item">
+          <strong>{{name}}</strong>{{#if issuer}} — {{issuer}}{{/if}}
+          {{#if date}}<span class="award-date"> ({{date}})</span>{{/if}}
+          {{#if description}}<br><span class="award-date">{{description}}</span>{{/if}}
+        </li>
+      {{/each}}
+      </ul>
+    </div>
+    {{/if}}
+
+    {{#if languages}}
+    <div class="resume-section">
+      <div class="section-title">Languages</div>
+      <ul class="lang-list">
+      {{#each languages}}
+        <li class="lang-item">
+          <strong>{{language}}</strong>
+          {{#if proficiency}}<span class="lang-proficiency"> — {{proficiency}}</span>{{/if}}
+        </li>
+      {{/each}}
+      </ul>
+    </div>
+    {{/if}}
+
+  </div>
+
+</body>
+</html>

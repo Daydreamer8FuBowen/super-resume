@@ -1,0 +1,47 @@
+<div class="resume-header">
+  {{#if personal_info.photo}}
+  <div class="header-photo">
+    <img src="{{personal_info.photo}}" alt="{{personal_info.full_name}}" />
+  </div>
+  {{/if}}
+  <div class="header-text">
+    <div class="name">{{personal_info.full_name}}</div>
+    {{#if personal_info.headline}}
+    <div class="headline">{{personal_info.headline}}</div>
+    {{/if}}
+    <div class="contact">
+      {{#if personal_info.email}}
+      <span>{{personal_info.email}}</span>
+      <span class="sep">|</span>
+      {{/if}}
+      {{#if personal_info.phone}}
+      <span>{{personal_info.phone}}</span>
+      <span class="sep">|</span>
+      {{/if}}
+      {{#if personal_info.location}}
+      <span>{{personal_info.location}}</span>
+      {{/if}}
+    </div>
+    <div class="contact" style="margin-top:4px;">
+      {{#if personal_info.links.github}}
+      <a href="{{personal_info.links.github}}" target="_blank">GitHub</a>
+      <span class="sep">|</span>
+      {{/if}}
+      {{#if personal_info.links.linkedin}}
+      <a href="{{personal_info.links.linkedin}}" target="_blank">LinkedIn</a>
+      <span class="sep">|</span>
+      {{/if}}
+      {{#if personal_info.links.portfolio}}
+      <a href="{{personal_info.links.portfolio}}" target="_blank">Portfolio</a>
+      <span class="sep">|</span>
+      {{/if}}
+      {{#if personal_info.links.website}}
+      <a href="{{personal_info.links.website}}" target="_blank">Website</a>
+      <span class="sep">|</span>
+      {{/if}}
+      {{#each personal_info.links.other}}
+      <a href="{{this}}" target="_blank">{{this}}</a>
+      {{/each}}
+    </div>
+  </div>
+</div>

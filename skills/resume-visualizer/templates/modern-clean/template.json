@@ -1,0 +1,14 @@
+{
+  "name": "Modern Clean",
+  "version": "1.0.0",
+  "description": "A clean, modern single-column resume template optimized for readability and ATS compatibility",
+  "author": "SuperResume",
+  "features": [
+    "Single column layout",
+    "System font stack (no external fonts)",
+    "Print-optimized with @page rules",
+    "CSS custom properties for easy theming",
+    "Responsive design",
+    "ATS-friendly structure"
+  ]
+}

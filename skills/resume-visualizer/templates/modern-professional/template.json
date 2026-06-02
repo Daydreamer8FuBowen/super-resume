@@ -1,0 +1,15 @@
+{
+  "name": "Modern Professional",
+  "version": "1.0.0",
+  "description": "A professional two-column resume layout with a left sidebar for contact, skills, and education, and a right main column for experience and projects",
+  "author": "SuperResume",
+  "features": [
+    "Two-column layout with sidebar",
+    "Profile photo support",
+    "System font stack (no external fonts)",
+    "Print-optimized with @page rules",
+    "CSS custom properties for easy theming",
+    "Responsive design (stacks on mobile)",
+    "ATS-friendly structure"
+  ]
+}
