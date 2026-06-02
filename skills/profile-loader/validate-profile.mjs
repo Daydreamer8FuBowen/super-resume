@@ -65,6 +65,12 @@ const ID_PATTERNS = {
   awards: /^award-\d{3,}$/,
 };
 
+const EVIDENCE_ENUMS = {
+  claim_level: ['C0', 'C1', 'C2', 'C3'],
+  truth_status: ['supported', 'careful', 'needs_evidence', 'unsupported', 'unknown'],
+  interview_risk: ['low', 'medium', 'high'],
+};
+
 // ─── Validation Helpers ───────────────────────────────────────────────
 
 const errors = [];
@@ -319,6 +325,14 @@ function validateTargetSpecific(data) {
       if ('confidence' in ft && !['high', 'medium', 'low', 'unknown'].includes(ft.confidence)) {
         error(`"fact_traceability[${i}].confidence" must be one of: high, medium, low, unknown`);
       }
+      for (const [field, allowed] of Object.entries(EVIDENCE_ENUMS)) {
+        if (field in ft && !allowed.includes(ft[field])) {
+          error(`"fact_traceability[${i}].${field}" must be one of: ${allowed.join(', ')}`);
+        }
+      }
+      if ('safe_wording' in ft && ft.safe_wording !== null && !isString(ft.safe_wording)) {
+        error(`"fact_traceability[${i}].safe_wording" must be a string or null`);
+      }
     }
   }
 }
@@ -427,16 +441,17 @@ function main() {
     validateTopLevel(data, REQUIRED_TOP_KEYS_TARGET);
   }
 
-  validatePersonalInfo(data.personal_info || {});
-  validateSkills(data.skills || {});
-
   // Section entry validation
   if (schemaType === 'base') {
+    validatePersonalInfo(data.personal_info || {});
+    validateSkills(data.skills || {});
     validateEntryArray(data, 'education', ID_PATTERNS.education);
     validateEntryArray(data, 'work_experience', ID_PATTERNS.work_experience);
     validateBaseSpecific(data);
     checkCrossSectionDuplicateIds(data);
   } else {
+    if ('personal_info' in data) validatePersonalInfo(data.personal_info);
+    if ('skills' in data) validateSkills(data.skills);
     validateTargetSpecific(data);
   }
 

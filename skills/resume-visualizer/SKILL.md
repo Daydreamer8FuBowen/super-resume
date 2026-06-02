@@ -38,6 +38,27 @@ Two distinct locations for JSON files — do NOT mix them:
 - User resume JSONs always live under `data/profiles/` in the project root — the visualizer reads them from there.
 - The visualizer script accepts any path as input, so user files can be anywhere, but the **convention** is `data/profiles/`.
 
+## Stable Profile Resolution
+
+Do not guess which profile JSON to visualize, and do not copy profile JSON into
+the visualizer folder. Resolve the input first:
+
+```bash
+node skills/resume-visualizer/scripts/resolve-profile.mjs [input] --json
+```
+
+Supported inputs:
+
+| Input | Meaning |
+|---|---|
+| omitted or `latest` | Newest `data/profiles/targets/*.json`, falling back to `data/profiles/base.json` |
+| `base` | `data/profiles/base.json` |
+| `target:<slug>` | `data/profiles/targets/<slug>.json` |
+| `<path.json>` | Explicit JSON file |
+
+The resolver validates the chosen profile and returns the exact
+`render-resume.mjs` command. Use that command for preview/export.
+
 ## How It Works
 
 The visualizer script reads a profile JSON, transforms it into a view model, renders it through a Handlebars-compatible template engine, and writes a self-contained HTML file. If `--no-serve` is not passed, it starts a local HTTP server with Server-Sent Events (SSE) for live reload.
@@ -76,13 +97,13 @@ node skills/resume-visualizer/scripts/render-resume.mjs base.json preview.html -
 
 ## Workflow
 
-### 1. Determine the input JSON path
+### 1. Resolve the input JSON path
 
 Check the user's request and context:
 
-- If the user says "preview my resume" or similar without specifying a file, default to `data/profiles/base.json`.
-- If the user names a specific profile, resolve to `data/profiles/<name>.json` or `data/profiles/targets/<name>.json`.
-- If a profile was just created or updated by a previous workflow step, use that file path.
+- If the user says "preview my resume" or similar without specifying a file, run `resolve-profile.mjs latest --json`.
+- If the user names a specific profile, run `resolve-profile.mjs target:<slug> --json` or pass an explicit JSON path.
+- If a profile was just created or updated by a previous workflow step, pass that exact file path to `resolve-profile.mjs`.
 - If no profile JSON exists yet, tell the user to create one first (via `base-profile-editor`).
 
 ### 1.5. Photo Check (non-mandatory)
@@ -109,7 +130,7 @@ This step is **non-blocking** — the visualizer works fine without a photo.
 
 ### 3. Run the visualizer
 
-Execute the `render-resume.mjs` script with the resolved paths. Report the output:
+Execute the render command returned by `resolve-profile.mjs`. Report the output:
 
 ```
 ✔ Parsed base.json (5.2 KB)

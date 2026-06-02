@@ -1,173 +1,166 @@
 ---
 name: research-launcher
 description: >-
-  Use when the SuperResume workflow requires structured research on target companies, job descriptions,
-  or role-specific resume priorities. Also use when the user directly requests company/industry/role
-  research before resume writing or tailoring. Do NOT use for single-URL quick lookups or simple
-  fact-checking that doesn't need a research plan.
+  Use when the SuperResume workflow requires structured web research on target
+  companies, job descriptions, or role-specific resume priorities. This skill
+  plans research, gets user confirmation, and dispatches isolated browser
+  subagents in parallel. Do NOT use for single-URL quick lookups.
 ---
 
 # Research Launcher
 
-本技能是 SuperResume 工作流中的调研调度器。不直接访问网页，只负责：确定目标 → 制定计划 → 用户确认 → 调度 subagent 执行 → 整理结果。
+This skill is the SuperResume research scheduler. It turns a target
+company/role/JD into bounded research tasks, runs those tasks through isolated
+browser subagents, and returns an evidence-backed research summary.
 
-调研是**尽力而为**的信息收集——网站打不开、需要登录、信息不存在都是正常结果，不强求完整，不反复重试。遇到困难如实记录即可。
+Research is best-effort. Login walls, captchas, missing pages, and weak sources
+are normal results. Record them once and move on.
 
-## When to Use
+## Required Control Model
 
-- SuperResume 工作流调度调研节点
-- 用户主动请求："帮我研究这家公司"、"这个 JD 需要关注什么"
-- 用户已有目标但缺少足够信息开始写简历
+Use **parallel isolated subagents** for web collection.
 
-**不使用：** 单个 URL 浏览（用 `browser` 技能）、用户已提供完整 JD 和公司信息、简单事实查询。
+| Rule | Requirement |
+|---|---|
+| One task, one subagent | Each research row is assigned to exactly one subagent. |
+| One subagent, one tab | Each subagent must open its own browser tab at startup and use only that tab. |
+| No shared browser state | A subagent must not click, close, reuse, or inspect another subagent's tab. |
+| Parallel launch | After the user approves the plan, dispatch independent subagents in parallel when the platform supports it. |
+| Bounded work | Each subagent follows the search budget in `research-launcher.md`. |
+| Evidence first | Every useful conclusion includes source URL and confidence. |
 
-## The Process
+If true parallel subagents are not available in the host environment, run the
+same task prompts sequentially, but keep the one-task/one-tab isolation rule.
 
-严格顺序的 5 阶段流程。不可跳过，不可并行。
+## Process
 
-### 阶段 1：确定目标
+### Phase 1: Determine Target
 
-从上下文或用户输入中提取目标。缺失则直接提问。
+Extract these fields from the user request or workflow context:
 
-| 字段 | 必须 |
-|------|------|
-| `target_company` | 条件必须（至少有一个目标） |
-| `target_role` | 条件必须（至少有一个目标） |
-| `target_jd` | 可选（有则跳过 JD 调研） |
+| Field | Required | Notes |
+|---|---:|---|
+| `target_company` | Conditional | Required if the task is company-specific. |
+| `target_role` | Conditional | Required if the task is role-specific. |
+| `target_jd` | Optional | If present, skip JD discovery unless the user requests verification. |
 
-**规则：** 不编造信息。用户已有 JD 则跳过 JD 调研。公司和岗位都缺失时提问。
+If both company and role are missing, ask one short clarification before planning.
 
-### 阶段 2：制定计划
+### Phase 2: Build Research Plan
 
-```text
-目标公司：<company> | 目标岗位：<role>
+Create 3-6 independent tasks. Each task must have a narrow question and likely
+sources. Avoid vague tasks such as "look around the website."
 
-| # | 任务 | 目标网站 | 调研内容 | 优先级 |
-|---|------|----------|----------|--------|
-| 1 | ...  | ...      | ...      | 高/中/低 |
+```markdown
+目标公司：<company or unknown>
+目标岗位：<role or unknown>
+
+| # | task_id | 调研问题 | 起始来源/搜索词 | 输出 | 优先级 |
+|---|---|---|---|---|---|
+| 1 | jd-core | ... | ... | ... | P0 |
 ```
 
-**约束：** 总任务 3-6 个。每个任务有明确的调研内容（禁止"看看网站"）。只调研与简历直接相关的：技术栈、业务方向、岗位核心要求、团队文化、关键词。不调研融资、股价等无关信息。
+Recommended task types:
 
-**建议来源：** 根据调研角度选择平台：
+| Angle | Sources |
+|---|---|
+| JD / role requirements | Company careers page, recruiting sites, user-provided JD |
+| Technology stack | Company engineering blog, GitHub, official docs, credible interviews |
+| Business/domain context | Official website, product pages, reliable company profiles |
+| Interview/resume signals | Niuke, Zhihu, Glassdoor-like sources, marked as lower confidence |
+| Resume examples/keywords | Public resume advice, role descriptions, job postings |
 
-| 角度 | 来源 |
-|------|------|
-| JD / 岗位要求 | 招聘网站（BOSS 直聘、公司招聘官网） |
-| 公司评价 / 技术氛围 / 面试经验 | 知乎 |
-| 公司文化 / 职场日常 / 办公环境 | 小红书 |
-| 技术栈 / 业务方向 | 公司技术博客、GitHub、官网 |
+### Phase 3: User Confirmation
 
-优先选信息密度高的平台，每个角度 1-2 个来源即可。
+Show the plan and wait for the user to choose:
 
-### 阶段 3：用户确认
+- `执行`: run the approved plan.
+- `调整`: revise task rows.
+- `补充`: update target context and rebuild the plan.
 
-呈现计划，等待用户选择：**执行**（进入阶段 4）/ **调整**（回到阶段 2）/ **补充**（更新阶段 1 后回到阶段 2）。
+Do not browse before approval.
 
-未确认绝不执行。
+### Phase 4: Dispatch Isolated Browser Subagents
 
-### 阶段 4：调度 Subagent
-
-**核心规则：** 每个任务一个独立 subagent，一次只跑一个，等上一个完成再启动下一个。
-
-#### ⚠️ Subagent 提示词构建规范
-
-> **这是阶段 4 最重要的规则。遗漏 `research-launcher.md` 会导致 subagent 行为完全失控（无搜索预算、不会终止、编造信息）。**
-
-**每个 subagent 的提示词必须包含以下 4 项，不可跳过任何一项：**
-
-| # | 内容 | 来源 | 作用 |
-|---|------|------|------|
-| 1 | 行为规范 | `skills/research-launcher/research-launcher.md` 全文 | 工具限制、登录检测、搜索预算、证据规则、完成规则 |
-| 2 | 浏览器工具 | `browser` 技能 | 提供 Playwright MCP 浏览器自动化能力 |
-| 3 | 上下文 | 阶段 1 输出 | 目标公司、岗位、已有 JD |
-| 4 | 本次任务 | 阶段 2 计划中的对应行 | 目标 URL、调研内容、预期输出格式 |
-
-**必须使用以下模板构建 subagent 提示词（逐项填充，不可省略）：**
+Each subagent prompt must include all four blocks below. Do not reference
+`research-launcher.md` by path only; paste its full content into the prompt.
 
 ```text
-你是网页信息检索 subagent。
+你是 SuperResume 网页信息检索 subagent。
 
-## 行为规范（最高优先级，覆盖所有其他指令）
-复制 skills/research-launcher/research-launcher.md 的全部内容到此处。
+## 行为规范
+<paste the full contents of skills/research-launcher/research-launcher.md>
 
-## 工具
-加载 browser 技能。
+## 浏览器隔离要求
+- 启动后立即创建或选择一个全新的浏览器标签页。
+- 本任务期间只使用这个标签页。
+- 不读取、不关闭、不复用其他 subagent 的标签页。
+- 每次导航后先检查 URL 和页面主体，确认没有登录/验证/付费墙。
 
 ## 上下文
-- 目标公司：<fill>
-- 目标岗位：<fill>
-- 已有 JD：<fill 或 "无">
+- target_company: <company or unknown>
+- target_role: <role or unknown>
+- target_jd: <provided JD summary or none>
 
-## 本次任务
-- 目标网站：<fill>
-- 调研内容：<fill>
-- 预期输出：<fill>
+## 本次单一任务
+- task_id: <task_id>
+- research_question: <question>
+- starting_sources_or_queries: <sources/queries>
+- expected_output: <specific output>
+- budget: max 3 query sets, max 3 results per query, max 5 pages
 ```
 
-#### 调度前自检清单
+Dispatch checklist before every subagent:
 
-每次创建 subagent 前，逐一确认：
+- [ ] Full `research-launcher.md` content is pasted.
+- [ ] Browser skill/tool availability is stated.
+- [ ] A fresh-tab isolation rule is present.
+- [ ] Target company/role/JD context is present.
+- [ ] The single task has a `task_id`, question, sources, output, and budget.
 
-- [ ] 提示词中包含 `research-launcher.md` 全文？（不是引用路径，是完整内容）
-- [ ] 提示词中包含 `browser` 技能？
-- [ ] 提示词中包含目标公司和岗位？
-- [ ] 提示词中包含本次任务的具体 URL 和调研内容？
+### Phase 5: Merge Results
 
-**任何一项未满足 → 补充后再调度。不允许带缺陷调度。**
-
-加载顺序：先加载 `research-launcher.md` 建立行为约束，再加载 `browser` 技能提供工具，最后注入本次任务上下文。顺序颠倒会导致约束无法生效。
-
-**中断处理：** subagent 返回人工介入请求时，通知用户并等待确认后重新调度。
-
-**失败处理：** 单个任务失败时问用户：重试 / 跳过 / 换网站。超时 5 分钟报告用户。
-
-### 阶段 5：整理结果
-
-按以下结构整理，标注每个信息的获取状态（已获取 / 部分 / 未获取）：
+After subagents return, merge their reports into one research summary. Keep task
+status visible and do not hide failures.
 
 ```markdown
 ## 调研结果
 
 ### <company> - <role>
 
-**岗位核心要求**：<关键要求、技术栈、经验>
-**公司技术方向**：<业务、技术栈、团队方向、匹配点>
-**简历关注重点**：<应突出的技能、经历类型、关键词>
-**补充**：<文化、团队规模等影响简历风格的信息>
+| task_id | 状态 | 关键结论 | 证据质量 |
+|---|---|---|---|
+| jd-core | 已获取/部分/未获取 | ... | high/medium/low |
+
+### 岗位核心要求
+- ...
+
+### 公司/业务/技术方向
+- ...
+
+### 简历关注重点
+- ...
+
+### 受限或未获取信息
+- ...
+
+### Sources
+- <title> - <url> - <used for>
 ```
 
 ## Anti-Patterns
 
-| 禁止 | 正确做法 |
-|------|----------|
-| 跳过计划直接执行 | 严格按阶段顺序 |
-| 不断追加任务"再多查一点" | 计划即边界，完成后停止 |
-| 单 subagent 打包所有任务 | 每个任务一个独立 subagent |
-| 自行决定下一步（工作流调度时） | 交还控制权给 SuperResume 主流程 |
-| 遗漏 `research-launcher.md` 就调度 subagent | 每次调度前完成自检清单，确认 4 项提示词内容齐全 |
-| 用引用路径代替完整内容 | 必须加载 `research-launcher.md` **全文**，不是"参考 research-launcher.md" |
+| Forbidden | Correct |
+|---|---|
+| One subagent handles all research | One task per subagent |
+| Multiple subagents share the same browser tab | Each subagent creates and owns one tab |
+| Browse before user approves the plan | Wait for `执行` |
+| Keep retrying login/captcha pages | Stop and report restriction |
+| Invent facts to fill gaps | Mark as not found or low confidence |
+| Mix resume writing into research | Return research only |
 
-## 退出
+## Exit
 
-**SuperResume 工作流调度时：** 返回调研结果和控制权，不自行决定下一步。
-
-```text
-调研节点完成。目标：<company> - <role>
-任务：<N> 个 | 成功：<N> | 部分：<N> | 未获取：<N>
-返回 SuperResume 主流程。
-```
-
-**用户直接调用时：** 输出总结 + 关键发现表后结束，等待用户下一步指令。
-
-```text
-调研完成。目标：<company> - <role>
-任务：<N> 个 | 成功：<N> | 部分：<N> | 未获取：<N>
-
-## 关键发现
-| 类别 | 核心信息 |
-|------|----------|
-| 技术栈 | ... |
-| 岗位重点 | ... |
-| 匹配点 | ... |
-```
+When called by `/super-resume`, return the merged research summary and control
+back to the main workflow. When called directly, output the summary and wait for
+the user's next instruction.

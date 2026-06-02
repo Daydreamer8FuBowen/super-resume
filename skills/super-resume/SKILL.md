@@ -42,14 +42,14 @@ description: >-
 - [ ] 确认目标岗位名称已明确
 
 ### Phase 2: External Research
-- [ ] 调用 `research-launcher` 执行完整调研工作流
+- [ ] 调用 `research-launcher` 执行完整调研工作流（并行隔离 browser subagents）
 - [ ] 确认获得：JD 分析结果（或用户提供 JD）、公司/行业背景（至少部分）
 - [ ] 调研结果已整理为结构化输出
 
 ### Phase 3: Resume Beautification
 - [ ] 调用 `resume-beautify` 生成目标简历
-- [ ] 确认 `data/profiles/targets/<company>-<role>.json` 已写入
-- [ ] 调用 `resume-visual` 启动预览
+- [ ] 确认 `data/profiles/targets/<company>-<role>.json` 已通过 `profile-store.mjs` 写入并校验
+- [ ] 调用 `resume-visual`，先用 `resolve-profile.mjs` 解析正确 JSON，再启动预览
 - [ ] 用户确认视觉效果（调整不限次数，每次调整后重新 beautify → visual）
 
 ### Phase 4: Resume Review
@@ -165,9 +165,9 @@ digraph super_resume_workflow {
 | 属性 | 内容 |
 |------|------|
 | **职责** | 收集目标公司/岗位/行业的背景信息，为美化提供 JD 锚点 |
-| **调用** | `Skill` tool → `research-launcher`（完整 5 阶段调研流程） |
+| **调用** | `Skill` tool → `research-launcher`（完整 5 阶段调研流程；执行阶段使用并行、独立标签页的 browser subagents） |
 | **产出** | 岗位核心要求、公司技术方向、行业关键词、简历关注重点 |
-| **调度方式** | 直接调用 `Skill` tool 执行 `research-launcher`，不使用 subagent |
+| **调度方式** | 直接调用 `Skill` tool 执行 `research-launcher`；research-launcher 内部可并行调度隔离 browser subagents |
 | **容错** | 部分信息获取不到是正常的，标记状态后继续，不强求完整 |
 
 ### Phase 3：简历美化
@@ -176,7 +176,7 @@ digraph super_resume_workflow {
 |------|------|
 | **职责** | 基于 base.json + JD + 调研结果，生成针对目标岗位的美化简历 |
 | **调用** | `Skill` tool → `resume-beautify`（完整 5 阶段美化流程） |
-| **产出** | `data/profiles/targets/<company>-<role>.json`、定位决策摘要 |
+| **产出** | 通过 `profile-store.mjs` 写入并校验的 `data/profiles/targets/<company>-<role>.json`、定位决策摘要 |
 | **循环支持** | 可接收用户调整意见或 review 报告作为额外输入，重新执行美化 |
 | **约束** | 不修改 base.json、核心事实不可变、所有 claim 可追溯、扩展项标注 confidence |
 | **调度方式** | 直接调用 `Skill` tool |
@@ -186,7 +186,7 @@ digraph super_resume_workflow {
 | 属性 | 内容 |
 |------|------|
 | **职责** | 将美化后的 target JSON 渲染为 HTML 页面，供用户实时预览 |
-| **调用** | `Skill` tool → `resume-visual`（启动 dev server + 浏览器预览） |
+| **调用** | `Skill` tool → `resume-visual`（先用 `resolve-profile.mjs` 解析并校验 profile，再启动 dev server + 浏览器预览） |
 | **确认标准** | 用户明确表示"没问题"/"可以"/"继续" |
 | **调整处理** | 收集反馈 → 回到 Phase 3（不计数），调整后重新可视化 |
 | **头像提醒** | 可视化启动时自动检测 `profile.png`，提醒用户可放置简历头像（非强制） |
@@ -206,7 +206,7 @@ digraph super_resume_workflow {
 | 属性 | 内容 |
 |------|------|
 | **职责** | 将最终确认的简历持久化，可选回写新事实到 base.json |
-| **调用** | `Skill` tool → `profile-loader`（写入 `targets/<company>-<role>.json`）；如有新事实 → `base-profile-editor`（回写 `base.json`） |
+| **调用** | `Skill` tool → `profile-loader`（通过 `profile-store.mjs` 写入 `targets/<company>-<role>.json`）；如有新事实 → `base-profile-editor`（回写 `base.json`） |
 | **回写判断** | 优化过程中用户补充了 base.json 中原本没有的事实（而非改写），则确认是否回写 |
 
 ### Phase 6：完成

@@ -32,7 +32,7 @@ description: >-
 1. **加载基础档案** — 通过 `profile-loader` 读取 `data/profiles/base.json`
 2. **定位决策** — 根据目标岗位/JD 自行决定：项目排序、技能取舍与排序、Headline/Summary 重写方向、经历保留/合并/弱化
 3. **内容美化** — 对选中内容进行 bullet 改写：关键词植入、结果导向表达、动词优化、术语对齐 JD、**上下文扩展**
-4. **写入 target JSON** — 通过 `profile-loader` 写入 `data/profiles/targets/<company>-<role>.json`
+4. **写入 target JSON** — 通过 `profile-loader` 的 `profile-store.mjs` 小 patch 合并工具写入 `data/profiles/targets/<company>-<role>.json`
 5. **输出决策摘要** — 列出做了什么选择及理由
 
 ### 不做的事
@@ -52,6 +52,7 @@ description: >-
 - **任务细节可扩展**：在核心事实框架内，基于 JD 要求 + 公司业务背景 + 行业常识，可以对项目任务细节进行**适度扩展**。扩展必须满足：有逻辑推导链、不违反已有事实、扩展部分标注 `confidence: "inferred"`
 - **JD 是锚点**：所有定位决策和扩展方向必须能回溯到 JD 中的要求或调研报告中的公司/行业信息
 - **指标优先真实**：优先使用 `base.json` 中的真实数据；在有调研报告或行业常识支撑时，可以合理估算并标注为推断值；无任何依据时在 `notes_for_resume_writer` 中建议补充
+- **先分级再写作**：每个强 claim 先标注 `claim_level`、`truth_status` 和 `interview_risk`。`C3` 影响类 claim 没有指标证据时必须降级或写入 `safe_wording`。
 
 ## The Process
 
@@ -351,13 +352,17 @@ JD 信号: "有分布式系统设计经验"
 
 ### 阶段 5：写入并总结
 
-1. 调用 `profile-loader` 写入 `data/profiles/targets/<company>-<role>.json`
-2. 使用 `profile-loader` 的 target profile schema，填充所有字段
+1. 创建最小 target patch JSON，只包含本次生成或更新的字段
+2. 调用 `node skills/profile-loader/profile-store.mjs merge --profile target --id <company-role> --patch <patch.json>`
+3. 使用 `profile-loader` 的 target profile schema，填充所有字段
 3. 为每个 `tailored_content` 中的 claim 填入 `fact_traceability`：
    - 直接改写项 → `source_section` + `source_id` + `confidence: "high"`
    - 技术推断项 → `source_section` + `source_id` + `confidence: "medium"` + 推断逻辑
    - 业务推断项 → `source_section` + `source_id` + `confidence: "inferred"` + 依据信号
-4. 若目标文件已存在，询问用户：覆盖 / 创建带日期的版本 / 取消
+   - 同时填入 `claim_level`、`truth_status`、`safe_wording`、`interview_risk`
+4. 若目标文件已存在且本次不是明确迭代更新，询问用户：覆盖 / 创建带日期的版本 / 取消
+
+**禁止**直接手写并替换整个大型 target JSON。Agent 只负责准备小 patch；合并、格式化、原子写入和校验交给 `profile-store.mjs`。
 
 **输出格式：**
 
@@ -411,6 +416,7 @@ JD 信号: "有分布式系统设计经验"
 | 关键词堆砌 | 自然、上下文相关的关键词放置 |
 | 所有岗位用同一 headline | 每次从 JD 重新推导 |
 | 跳过 `fact_traceability` | 每个 claim 必须可追溯，扩展项标注 confidence |
+| 无证据写 C3 结果影响 | 降级为过程/分析表述，或放入 `safe_wording` 等待补证据 |
 | 不确定扩展偷偷执行不告知 | 在决策摘要中标明扩展项及依据 |
 
 ## 退出

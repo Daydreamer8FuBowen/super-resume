@@ -105,8 +105,103 @@ function formatDate(dateStr) {
 
 // ─── Data Transformation ─────────────────────────────────────────────
 
+function normalizeBulletGroup(group, fallbackTitle) {
+  if (typeof group === 'string') {
+    return { title: fallbackTitle, bullets: [group] };
+  }
+  if (!group || typeof group !== 'object') {
+    return { title: fallbackTitle, bullets: [] };
+  }
+  return {
+    title: group.title || group.role || group.company || group.name || fallbackTitle,
+    company: group.company || null,
+    role: group.role || group.title || fallbackTitle,
+    bullets: Array.isArray(group.bullets) ? group.bullets : [],
+    technologies: Array.isArray(group.technologies) ? group.technologies : [],
+  };
+}
+
+function normalizeTargetProfile(raw) {
+  if (raw.profile_type !== 'targeted') return raw;
+
+  const selected = raw.selected_profile || {};
+  const tailored = raw.tailored_content || {};
+  const personalInfo = {
+    ...(raw.personal_info || {}),
+    ...(selected.personal_info || {}),
+  };
+
+  if (tailored.headline) {
+    personalInfo.headline = tailored.headline;
+  }
+
+  const experienceGroups = Array.isArray(tailored.experience_bullets)
+    ? tailored.experience_bullets
+    : [];
+  const projectGroups = Array.isArray(tailored.project_bullets)
+    ? tailored.project_bullets
+    : [];
+  const skillsSection = Array.isArray(tailored.skills_section)
+    ? tailored.skills_section
+    : [];
+
+  return {
+    schema_version: raw.schema_version,
+    profile_type: 'base',
+    profile_id: raw.profile_id,
+    last_updated: raw.last_updated || raw.metadata?.updated_at || null,
+    personal_info: personalInfo,
+    career_objective: {
+      target_roles: raw.target?.role ? [raw.target.role] : [],
+      target_industries: raw.target?.industry ? [raw.target.industry] : [],
+      summary_facts: tailored.summary ? [tailored.summary] : [],
+    },
+    education: raw.education || [],
+    work_experience: experienceGroups.map((group, index) => {
+      const normalized = normalizeBulletGroup(group, `Experience ${index + 1}`);
+      return {
+        id: `target-work-${index + 1}`,
+        company: normalized.company,
+        role: normalized.role,
+        achievements: normalized.bullets.map(claim => ({
+          claim,
+          technologies: normalized.technologies,
+        })),
+      };
+    }),
+    internships: [],
+    projects: projectGroups.map((group, index) => {
+      const normalized = normalizeBulletGroup(group, `Project ${index + 1}`);
+      return {
+        id: `target-project-${index + 1}`,
+        name: normalized.title,
+        role: normalized.role === normalized.title ? null : normalized.role,
+        actions: normalized.bullets,
+        technologies: normalized.technologies,
+      };
+    }),
+    skills: {
+      programming_languages: [],
+      frameworks: [],
+      tools: [],
+      platforms: [],
+      databases: [],
+      methodologies: [],
+      domain_skills: skillsSection,
+      soft_skills: [],
+      ...(raw.skills || {}),
+      ...(selected.skill_groups || {}),
+    },
+    certifications: raw.certifications || [],
+    awards: raw.awards || [],
+    languages: raw.languages || [],
+    publications: raw.publications || [],
+    portfolio: raw.portfolio || [],
+  };
+}
+
 function transformData(raw) {
-  const data = JSON.parse(JSON.stringify(raw)); // Deep clone
+  const data = JSON.parse(JSON.stringify(normalizeTargetProfile(raw))); // Deep clone
 
   // Format all dates
   for (const key of ['work_experience', 'internships', 'projects', 'education']) {

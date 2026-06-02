@@ -105,6 +105,7 @@ For each experience or project, try to capture:
 - Technologies used
 - Results or metrics
 - Source notes from the user's original wording
+- Evidence strength and ownership risk when visible: code/logs/metrics/screenshots are stronger than vague memory; team/platform work must not be recorded as sole ownership.
 
 ### 5. Add from natural-language descriptions
 

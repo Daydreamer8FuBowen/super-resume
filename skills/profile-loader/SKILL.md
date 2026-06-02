@@ -30,19 +30,46 @@ If a task combines persistence with writing/reviewing/tailoring, use this skill 
 
 ## Tool Restrictions
 
-This skill operates under strict tool usage limits:
+This skill is allowed to read profile JSON files and to run only the bundled
+profile persistence tools. Avoid ad hoc shell pipelines or external JSON
+rewriters.
 
 | Allowed | Forbidden |
 |---------|-----------|
-| `Read` tool — read JSON files | `Bash` — running `node`, `python`, `jq`, `cat`, or any external process |
-| `Write` tool — create new JSON files | `Bash` — any shell command whatsoever |
-| `Edit` tool — modify existing JSON files | Any tool not listed under "Allowed" |
+| Read profile JSON files | Unrelated shell commands |
+| Create a small patch JSON file | `jq`, Python one-off rewrites, or custom shell text manipulation |
+| Run `node skills/profile-loader/profile-store.mjs ...` | Editing large profile JSON by hand when a patch is sufficient |
+| Run `node skills/profile-loader/validate-profile.mjs ...` | Any scraper, browser, or resume-writing action |
 
 **Rules:**
-- This skill only reads and writes JSON files using the basic file tools above.
-- It does NOT invoke external commands, scripts, or other skills on its own.
-- JSON validation is performed by the **caller** (e.g., `super-resume`, `base-profile-editor`) using the `validate-profile.mjs` script — see below.
-- When this skill writes JSON, it must produce parseable JSON. The caller is responsible for running validation.
+- Use `profile-store.mjs` for writes whenever possible.
+- Use `validate-profile.mjs` for any write path not handled by `profile-store.mjs`.
+- Do not invoke unrelated commands or other skills from this persistence layer.
+- When conflicts affect important facts, ask before writing the conflicting field.
+
+## Stable Persistence Tooling
+
+Large resume JSON files are error-prone when an agent rewrites the whole file.
+Use the bundled persistence tool whenever possible:
+
+```bash
+# Merge a small patch into the base profile, then validate automatically.
+node skills/profile-loader/profile-store.mjs merge --profile base --patch patch.json
+
+# Merge a small patch into a target profile, then validate automatically.
+node skills/profile-loader/profile-store.mjs merge --profile target --id <company-role> --patch patch.json
+
+# Merge into an explicit file.
+node skills/profile-loader/profile-store.mjs merge --file data/profiles/base.json --schema base --patch patch.json
+```
+
+**Required behavior for agents:**
+
+- Produce the smallest possible patch JSON instead of rewriting a whole profile.
+- Let `profile-store.mjs` merge, format, write atomically, and validate.
+- If validation fails, fix the patch and rerun the same command.
+- Treat `null` in a patch as deletion. Use it only when deleting a field is intended.
+- Arrays in a patch replace arrays in the profile; include the full intended array when changing one.
 
 ## JSON Validation
 
@@ -104,6 +131,19 @@ User resume profiles are stored under the project working directory (NOT inside 
 
 The base profile is the source of truth. Targeted profiles may select, reorder, emphasize, or rewrite positioning, but they must not change facts. When a target profile makes a claim, that claim should be traceable to `base.json` or to a clearly recorded user-provided source.
 
+## Evidence Contract
+
+Use these compact labels for strong resume claims:
+
+| Field | Values |
+|---|---|
+| `claim_level` | `C0` aware/participated, `C1` owned module, `C2` designed/optimized, `C3` measured impact |
+| `truth_status` | `supported`, `careful`, `needs_evidence`, `unsupported`, `unknown` |
+| `interview_risk` | `low`, `medium`, `high` |
+
+Do not write C3 impact claims without metric evidence. Use `safe_wording` when
+the current evidence only supports a weaker claim.
+
 ## Read / Write Protocol
 
 Follow this protocol whenever profile JSON is involved.
@@ -128,7 +168,12 @@ Follow this protocol whenever profile JSON is involved.
    - Update existing entries when the user clarifies the same experience.
    - Keep previous raw source notes unless the user explicitly asks to remove them.
 
-5. **Write valid JSON**
+5. **Write through the persistence tool**
+   - Prefer `profile-store.mjs` with a small patch over a full-file rewrite.
+   - The tool writes atomically and runs validation automatically.
+   - If the caller writes by any other route, it MUST run `validate-profile.mjs` manually.
+
+6. **Write valid JSON**
    - JSON must be parseable.
    - Use double quotes.
    - Do not include comments in JSON files.
@@ -356,7 +401,11 @@ Use this structure for `data/profiles/targets/<company>-<role>.json`.
       "source_profile_path": "data/profiles/base.json",
       "source_section": null,
       "source_id": null,
-      "confidence": "unknown"
+      "confidence": "unknown",
+      "claim_level": "C0",
+      "truth_status": "unknown",
+      "safe_wording": null,
+      "interview_risk": "medium"
     }
   ],
   "metadata": {
