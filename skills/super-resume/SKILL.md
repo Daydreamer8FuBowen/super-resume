@@ -1,21 +1,18 @@
 ---
 name: super-resume
 description: >-
-  SuperResume 简历编写全生命周期主控技能。MUST use this skill when the user
-  wants to create, tailor, or optimize a resume for a specific job application.
-  This is the ONLY entry point for the complete resume workflow. Triggers on
-  "写简历", "优化简历", "帮我投递", "/super-resume", or any resume creation
-  request. Do NOT dispatch via subagent — user must invoke directly. This skill
-  orchestrates the full lifecycle: profile loading, research, beautification,
-  visual preview, review scoring, and final persistence. All sub-skills are
-  dispatched internally via Skill tool — never through subagents.
+  SuperResume 简历编写全生命周期主控技能。当用户希望为特定岗位创建、定制或优化简历时，必须使用本技能。
+  这是完整简历工作流的唯一入口。触发请求包括“写简历”、“优化简历”、“帮我投递”、"/super-resume"
+  或任何 resume creation request。不要通过 subagent 调度——必须由用户直接调用。本技能统一编排
+  profile loading、research、beautification、visual preview、review scoring 和最终持久化。
+  所有子技能都通过 Skill tool 在内部调度，绝不通过 subagents 间接调度。
 ---
 
 # SuperResume
 
 本技能是 SuperResume 插件的主控技能，管理简历编写的完整生命周期。它是唯一入口——用户始终通过 `/super-resume` 启动工作流，子技能由本技能内部调度。
 
-## When to Use
+## 何时使用
 
 | 触发 | 不触发 |
 |------|--------|
@@ -27,42 +24,42 @@ description: >-
 
 **本 skill 不得由 subagent 调度。** 子技能通过 `Skill` tool 直接调用，不使用 subagent 间接调度子技能。如果检测到当前由 subagent 执行，立即停止并提示用户直接调用。
 
-## Checklist
+## 检查清单
 
 > 每个阶段必须在进入下一阶段前完成所有检查项。这是 rigid 风格的强制清单。
 
-### Phase 0: Intent Parsing
+### 阶段 0：意图解析
 - [ ] 确认本 skill 由用户直接调用（非 subagent）
 - [ ] 提取用户意图：目标岗位（必须）、目标公司（可选）、JD（可选）
 
-### Phase 1: Base Profile Ready
+### 阶段 1：基础档案就绪
 - [ ] 检查 `data/profiles/base.json` 是否存在
 - [ ] 若不存在或信息不完整 → 调用 `base-profile-editor` + `profile-loader` 补全
 - [ ] 确认至少存在：姓名、联系方式、至少一段工作/项目经历
 - [ ] 确认目标岗位名称已明确
 
-### Phase 2: External Research
+### 阶段 2：外部调研
 - [ ] 调用 `research-launcher` 执行完整调研工作流（并行隔离 browser subagents）
 - [ ] 确认获得：JD 分析结果（或用户提供 JD）、公司/行业背景（至少部分）
 - [ ] 调研结果已整理为结构化输出
 
-### Phase 3: Resume Beautification
+### 阶段 3：简历美化
 - [ ] 调用 `resume-beautify` 生成目标简历
 - [ ] 确认 `data/profiles/targets/<company>-<role>.json` 已通过 `profile-store.mjs` 写入并校验
 - [ ] 调用 `resume-visual`，先用 `resolve-profile.mjs` 解析正确 JSON，再启动预览
 - [ ] 用户确认视觉效果（调整不限次数，每次调整后重新 beautify → visual）
 
-### Phase 4: Resume Review
+### 阶段 4：简历评审
 - [ ] 用户视觉确认通过后，调用 `resume-review` 评分
 - [ ] 若总分 < 85 且重试次数 < 3：回到 Phase 3，将 review 报告传给 beautify
 - [ ] 若总分 ≥ 85 或重试次数 = 3：进入最终输出
 
-### Phase 5: Final Save
+### 阶段 5：最终保存
 - [ ] 调用 `profile-loader` 写入最终 `targets/<company>-<role>.json`
 - [ ] 如果优化过程中产生了新事实信息，确认是否回写 `base.json`
 - [ ] 输出最终摘要：岗位匹配度、关键亮点、简历文件路径
 
-## Process Flow
+## 流程图
 
 ```dot
 digraph super_resume_workflow {
@@ -130,7 +127,7 @@ digraph super_resume_workflow {
 }
 ```
 
-### Flow Key Points
+### 流程关键点
 
 | 节点 | 说明 |
 |------|------|
@@ -139,7 +136,7 @@ digraph super_resume_workflow {
 | `score_check` | 守卫：评分 ≥85 或重试 ≥3 次才放行到最终保存 |
 | `retry_count` | 计数器：每次 review 不通过 +1，上限 3 次 |
 
-## The Process
+## 详细流程
 
 ### Phase 0：意图解析
 
@@ -216,7 +213,7 @@ digraph super_resume_workflow {
 | **职责** | 输出最终摘要，告知用户简历位置和关键信息 |
 | **输出** | 目标岗位、匹配度评估、简历文件路径、关键亮点提示 |
 
-## Key Principles
+## 核心原则
 
 ### 1. 单一入口原则
 `/super-resume` 是简历编写的唯一入口。所有子技能（research-launcher、resume-beautify、resume-review、resume-visual、profile-loader、base-profile-editor）由本技能内部调度，用户不直接调用子技能。Subagent 不得调度本 skill。
@@ -252,7 +249,7 @@ digraph super_resume_workflow {
 ### 8. 容错继续原则
 调研不完整、JD 模糊、部分信息缺失都不阻塞流程。标注清楚状态后继续，让用户在后续节点看到并决定。
 
-## Final Output
+## 最终输出
 
 工作流完成后，向用户呈现结构化摘要：
 
@@ -291,7 +288,7 @@ digraph super_resume_workflow {
 - 投递其他岗位：`/super-resume` 重新开始
 ```
 
-## Resume Management
+## 简历版本管理
 
 ### 路径约定
 
@@ -338,7 +335,7 @@ digraph super_resume_workflow {
 - 修改 target JSON 后自动刷新
 - 用户可通过浏览器 Ctrl+P 导出 PDF
 
-## Error Handling
+## 异常处理
 
 | 场景 | 处理 |
 |------|------|
@@ -353,7 +350,7 @@ digraph super_resume_workflow {
 | Review 分数 3 次后仍 < 85 | 强制通过。在最终摘要中标注"3 次评审未达阈值，强制输出" |
 | 工作流中用户尝试直接调用子技能 | 提醒用户：子技能由 super-resume 统一管理，请使用 `/super-resume` |
 
-## Anti-Patterns
+## 反模式
 
 | 禁止 | 正确做法 |
 |------|----------|
@@ -367,7 +364,7 @@ digraph super_resume_workflow {
 | 跳过 checklist 中的阶段 | 每个阶段必须完成后才能进入下一阶段 |
 | 允许用户在工作流中独立调用子技能 | 提醒用户完整工作流由 super-resume 管理 |
 
-## Integration Contract
+## 集成约定
 
 ### 子技能调度表
 

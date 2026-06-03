@@ -1,158 +1,158 @@
 ---
 name: base-profile-editor
-description: Personal base resume profile completion, intake, add, edit, and conflict-resolution workflow for SuperResume. MUST use this skill when the user wants to import an old resume, extract resume facts from messy PDF/Word-converted text, complete missing base resume information, add a described experience/project/education item, correct existing resume facts, or update the user's foundational resume profile. This skill MUST use profile-loader for every read/write/merge of resume JSON and only updates data/profiles/base.json, not targeted company/role profiles.
+description: SuperResume 的基础简历档案补全、导入、添加、编辑与冲突处理工作流。MUST use this skill when the user wants to import an old resume, extract resume facts from messy PDF/Word-converted text, complete missing base resume information, add a described experience/project/education item, correct existing resume facts, or update the user's foundational resume profile. 本技能必须通过 profile-loader 完成所有 resume JSON 的读取/写入/合并，并且只更新 data/profiles/base.json，不写入目标公司/岗位 profile。
 ---
 
-# Base Profile Editor
+# 基础档案编辑器
 
-This skill turns user-provided resume information into accurate updates to the foundational SuperResume profile at `data/profiles/base.json`. It is the intake and editing layer for the user's base resume facts.
+本技能负责把用户提供的简历信息转换为对 SuperResume 基础档案 `data/profiles/base.json` 的准确更新。它是用户基础简历事实的录入与编辑层。
 
-Use `profile-loader` for all JSON persistence. This skill decides what facts to extract, how to repair messy input, when to ask conflict questions, and how to prepare the update; `profile-loader` provides the schema, storage paths, and read/write protocol.
+所有 JSON 持久化都应通过 `profile-loader` 完成。本技能负责判断该提取哪些事实、如何修复杂乱输入、何时发起冲突确认以及如何准备更新；`profile-loader` 负责 schema、存储路径与读写协议。
 
-## Scope
+## 适用范围
 
-Use this skill to:
+以下情况应使用本技能：
 
-- Import old resume content into `data/profiles/base.json`.
-- Extract facts from pasted resume text, Word text, PDF-to-Word text, OCR-like text, or fragmented notes.
-- Reconstruct likely sections when layout is broken, characters are out of order, bullets are merged, or columns were flattened.
-- Add a new project, internship, work experience, education item, skill, certificate, award, portfolio link, or contact detail from natural-language descriptions.
-- Modify or correct existing base profile facts.
-- Detect conflicts with the existing base profile and ask the user which version is correct before overwriting important facts.
-- Produce a concise update summary and list missing information that would improve the base profile.
+- 将旧简历内容导入 `data/profiles/base.json`。
+- 从粘贴的简历文本、Word 文本、PDF 转 Word 文本、类似 OCR 的文本或碎片化笔记中提取事实。
+- 当版式破碎、字符顺序错乱、bullet 合并或多栏内容被拍平时，重建可能的简历 section。
+- 从自然语言描述中新增项目、实习、工作经历、教育条目、技能、证书、奖项、作品集链接或联系方式。
+- 修改或纠正现有基础 profile 事实。
+- 检测与现有基础 profile 的冲突，并在覆盖重要事实前询问用户哪个版本正确。
+- 产出简洁的更新摘要，并列出能提升基础 profile 质量的缺失信息。
 
-Do not use this skill to:
+以下情况不应使用本技能：
 
-- Create targeted company/role resume profiles. Use `profile-loader` targeted profile flow for that.
-- Write the final polished resume document.
-- Rewrite bullets for a specific job description.
-- Score or critique the resume.
-- Invent facts, dates, metrics, degrees, companies, titles, or tools.
+- 创建目标公司/岗位简历 profile。此类任务应使用 `profile-loader` 的 targeted profile 流程。
+- 撰写最终润色后的简历文档。
+- 针对特定 JD 改写 bullet。
+- 给简历打分或进行批判性审查。
+- 编造事实、日期、指标、学历、公司、title 或工具。
 
-## Required Dependency: profile-loader
+## 必要依赖：profile-loader
 
-Before reading, creating, or modifying resume JSON, use the `profile-loader` skill.
+读取、创建或修改 resume JSON 前，必须使用 `profile-loader` skill。
 
-Required storage target:
+固定写入目标：
 
 ```text
 data/profiles/base.json
 ```
 
-This skill never writes targeted versions under `data/profiles/targets/`. If the user asks for company/role adaptation, first ensure `base.json` is up to date, then route the adaptation to the appropriate targeted-profile workflow.
+本技能绝不写入 `data/profiles/targets/` 下的目标版本。如果用户要求公司/岗位适配，先确保 `base.json` 是最新的，再把适配任务交给对应的目标 profile 工作流。
 
-## Operating Workflow
+## 操作流程
 
-### 1. Classify the user input
+### 1. 判断用户输入类型
 
-Decide which intake mode applies:
+判断当前适用哪种录入模式：
 
-| Mode | User input examples | Main action |
+| 模式 | 用户输入示例 | 主要动作 |
 |---|---|---|
-| Old resume import | “这是我的旧简历”, pasted resume text, PDF/Word text | Extract all identifiable base facts and merge into `base.json`. |
-| Messy conversion repair | Broken columns, wrong line order, merged bullets, odd spacing | Infer the most likely resume sections and preserve uncertainty. |
-| Natural-language add | “我还做过一个项目…”, “把这个实习加进去” | Convert the description into a structured entry and add it. |
-| Correction | “时间写错了”, “不是北京，是上海” | Find the likely existing entry and update only the corrected fields. |
-| Completion | “帮我补全基础简历”, “这些信息写入档案” | Add missing sections and ask for high-value missing facts. |
+| 旧简历导入 | “这是我的旧简历”, pasted resume text, PDF/Word text | 提取所有可识别的基础事实并合并进 `base.json`。 |
+| 杂乱转换修复 | Broken columns, wrong line order, merged bullets, odd spacing | 推断最可能的简历 section，并保留不确定性。 |
+| 自然语言新增 | “我还做过一个项目…”, “把这个实习加进去” | 将描述转换成结构化条目并新增。 |
+| 信息纠正 | “时间写错了”, “不是北京，是上海” | 找到最可能的现有条目，只更新被纠正的字段。 |
+| 信息补全 | “帮我补全基础简历”, “这些信息写入档案” | 添加缺失 section，并询问高价值缺失事实。 |
 
-### 2. Load the current base profile
+### 2. 加载当前基础档案
 
-Use `profile-loader` to read `data/profiles/base.json`.
+使用 `profile-loader` 读取 `data/profiles/base.json`。
 
-- If it exists, preserve all unrelated fields.
-- If it does not exist, create it using the base schema from `profile-loader`.
-- Treat existing IDs as stable references. Do not rename IDs without need.
+- 如果文件存在，保留所有无关字段。
+- 如果文件不存在，使用 `profile-loader` 的基础 schema 创建。
+- 将现有 ID 视为稳定引用。没有必要时不要重命名 ID。
 
-### 3. Reconstruct messy resume text
+### 3. 重建杂乱的简历文本
 
-When input appears to come from PDF, Word conversion, OCR, or copied resume layout:
+当输入看起来来自 PDF、Word 转换、OCR 或复制的简历版式时：
 
-- Look for section anchors in Chinese and English, such as `教育经历`, `项目经历`, `实习经历`, `工作经历`, `技能`, `证书`, `Education`, `Projects`, `Experience`, `Skills`.
-- Use dates, company/school names, role titles, bullet markers, and technology names to regroup text.
-- Repair common column-copy issues where dates, titles, and descriptions appear on separate lines.
-- Treat adjacent lines with shared dates/company/project names as the same entry when reasonable.
-- Preserve uncertain reconstruction in `source_notes` rather than pretending it is certain.
-- If reconstruction affects a critical fact, ask the user to confirm before writing.
+- 查找中英文 section 锚点，例如 `教育经历`、`项目经历`、`实习经历`、`工作经历`、`技能`、`证书`、`Education`、`Projects`、`Experience`、`Skills`。
+- 使用日期、公司/学校名称、角色 title、bullet 标记和技术名称重新归组文本。
+- 修复常见的多栏复制问题，例如日期、标题和描述出现在分离的行上。
+- 当相邻行共享日期、公司或项目名时，在合理情况下视为同一条目。
+- 将不确定的重建信息保存在 `source_notes`，不要假装它是确定事实。
+- 如果重建结果会影响关键事实，写入前先请用户确认。
 
-Do not overfit to layout. The goal is a faithful base fact record, not a pretty resume.
+不要过度依赖版式。目标是忠实记录基础事实，而不是生成一份漂亮简历。
 
-### 4. Extract facts into profile-loader schema fields
+### 4. 将事实提取到 profile-loader schema 字段
 
-Map information to the closest `profile-loader` base schema section:
+将信息映射到最接近的 `profile-loader` 基础 schema section：
 
-| Information | Destination |
+| 信息类型 | 写入位置 |
 |---|---|
-| Name, email, phone, location, links | `personal_info` |
-| Target direction or career summary facts | `career_objective` |
-| School, degree, major, GPA, courses | `education` |
-| Full-time roles | `work_experience` |
-| Internships | `internships` |
-| Academic, personal, open-source, product, or engineering projects | `projects` |
-| Programming languages, frameworks, tools, platforms | `skills` |
-| Certificates | `certifications` |
-| Competitions, scholarships, honors | `awards` |
-| Languages | `languages` |
-| Websites, GitHub repos, demos, portfolios | `portfolio` or `personal_info.links` |
+| 姓名、邮箱、电话、地点、链接 | `personal_info` |
+| 目标方向或职业概述事实 | `career_objective` |
+| 学校、学历、专业、GPA、课程 | `education` |
+| 全职经历 | `work_experience` |
+| 实习经历 | `internships` |
+| 学术、个人、开源、产品或工程项目 | `projects` |
+| 编程语言、框架、工具、平台 | `skills` |
+| 证书 | `certifications` |
+| 竞赛、奖学金、荣誉 | `awards` |
+| 语言能力 | `languages` |
+| 网站、GitHub 仓库、demo、作品集 | `portfolio` or `personal_info.links` |
 
-For each experience or project, try to capture:
+对于每段经历或项目，尽量提取：
 
-- Name/title
-- Organization/company/school context
-- Role
-- Start and end dates
-- Problem or background
-- Actions taken
-- Technologies used
-- Results or metrics
-- Source notes from the user's original wording
-- Evidence strength and ownership risk when visible: code/logs/metrics/screenshots are stronger than vague memory; team/platform work must not be recorded as sole ownership.
+- 名称 / title
+- 组织 / 公司 / 学校背景
+- 角色
+- 开始和结束日期
+- 问题或背景
+- 采取的行动
+- 使用的技术
+- 结果或指标
+- 来自用户原始表述的 source notes
+- 可见的证据强度和 ownership 风险：代码/日志/指标/截图强于模糊记忆；团队或平台工作不能记录成单人所有。
 
-### 5. Add from natural-language descriptions
+### 5. 从自然语言描述中新增内容
 
-When the user describes something conversationally:
+当用户以口语化方式描述信息时：
 
-1. Identify the most likely section.
-2. Create or update a structured entry.
-3. Keep the user's original wording in `source_notes` when it helps preserve nuance.
-4. Normalize only obvious structure; do not fabricate missing dates, metrics, or technology.
-5. Ask only for missing information that blocks correct placement or causes ambiguity.
+1. 识别最可能的 section。
+2. 创建或更新结构化条目。
+3. 当有助于保留语义差异时，将用户原话保存在 `source_notes`。
+4. 只规范化明显结构；不要编造缺失日期、指标或技术。
+5. 只询问会阻碍正确归类或造成歧义的缺失信息。
 
-Example:
+示例：
 
-Input:
+输入：
 
 ```text
 我还做过一个校园二手交易小程序，用 Vue 和 Spring Boot，主要负责前端和商品发布流程。
 ```
 
-Expected structured interpretation:
+期望的结构化理解：
 
 - Section: `projects`
 - Name: `校园二手交易小程序`
-- Role: frontend / product flow contributor, if the wording supports it
+- Role: 如果原文支持，可记录为 frontend / product flow contributor
 - Technologies: `Vue`, `Spring Boot`
 - Actions: front-end implementation, product publishing flow
 - Missing: date, measurable result, link
 
-### 6. Detect conflicts before overwriting
+### 6. 覆盖前先检测冲突
 
-A conflict exists when new input disagrees with an existing important value.
+当新输入与现有重要值不一致时，视为冲突。
 
-Always ask the user before overwriting conflicts in:
+以下字段一旦出现冲突，必须先询问用户再覆盖：
 
-- Name
-- Email or phone
-- School
-- Degree or major
-- Company
-- Role/title
-- Start or end date
-- Location
-- Certificate name or issuer
-- Project ownership or project type
-- Metrics or quantified outcomes
+- 姓名
+- Email 或 phone
+- 学校
+- 学历或专业
+- 公司
+- 角色 / title
+- 开始或结束日期
+- 地点
+- 证书名称或颁发机构
+- 项目 ownership 或项目类型
+- 指标或量化结果
 
-Conflict question format:
+冲突提问格式：
 
 ```text
 我发现这次信息和现有基础档案有冲突：
@@ -167,33 +167,33 @@ Conflict question format:
 3. 两者都保留，并加备注说明
 ```
 
-Do not write the conflicting field until the user answers. Non-conflicting additions can still be prepared, but make clear what is waiting on confirmation.
+在用户答复前，不要写入冲突字段。非冲突新增内容可以先准备，但必须明确说明哪些部分仍在等待确认。
 
-### 7. Merge safely
+### 7. 安全合并
 
-Use these merge rules:
+遵循以下合并规则：
 
-- Add a new entry when company/project/school + dates/title indicate a distinct item.
-- Update an existing entry when the user clearly refers to it.
-- Append technologies and skills without duplicates.
-- Append source notes rather than replacing them.
-- Preserve old facts if the new input is vague.
-- Mark uncertain fields with `confidence: "unknown"` or note uncertainty in `source_notes`.
-- Prefer `null` or empty arrays over guessed values.
+- 当公司/项目/学校 + 日期/title 表明这是不同条目时，新增条目。
+- 当用户明确指向某个已有条目时，更新该条目。
+- 追加技术和技能时去重。
+- 追加 source notes，而不是替换已有备注。
+- 如果新输入很模糊，保留旧事实。
+- 用 `confidence: "unknown"` 标记不确定字段，或在 `source_notes` 中说明不确定性。
+- 优先使用 `null` 或空数组，不要猜测值。
 
-### 8. Write through profile-loader
+### 8. 通过 profile-loader 写入
 
-After extraction and conflict resolution:
+完成提取和冲突解决后：
 
-1. Use `profile-loader` to write or merge into `data/profiles/base.json`.
-2. Ensure the result remains valid JSON.
-3. Preserve unrelated sections.
-4. Update `metadata.updated_at` and `last_updated` using the current date.
-5. Add a `raw_sources` entry for substantial imported content when useful.
+1. 使用 `profile-loader` 写入或合并到 `data/profiles/base.json`。
+2. 确保结果仍是合法 JSON。
+3. 保留无关 section。
+4. 使用当前日期更新 `metadata.updated_at` 和 `last_updated`。
+5. 对大量导入内容，在有用时新增 `raw_sources` 条目。
 
-## Completion Response
+## 完成回复
 
-After processing, respond in this structure:
+处理完成后，按以下结构回复：
 
 ```text
 已更新基础简历档案。
@@ -216,13 +216,13 @@ After processing, respond in this structure:
 - <missing high-value fields, if any>
 ```
 
-If no file was written because conflicts require confirmation, say so clearly.
+如果因为冲突需要确认而没有写入文件，必须明确说明。
 
-## Examples
+## 示例
 
-### Example 1: Import messy old resume text
+### 示例 1：导入杂乱的旧简历文本
 
-Input:
+输入：
 
 ```text
 这是 PDF 转出来的，有点乱：
@@ -232,46 +232,46 @@ Input:
 React Node.js Python
 ```
 
-Behavior:
+处理方式：
 
-1. Use `profile-loader` to read `data/profiles/base.json`.
-2. Reconstruct likely personal, education, project, and skill sections.
-3. Write clear facts.
-4. Put uncertain reconstruction details in `source_notes`.
-5. Ask only if a critical field conflicts with existing data.
+1. 使用 `profile-loader` 读取 `data/profiles/base.json`。
+2. 重建可能的个人信息、教育、项目和技能 section。
+3. 写入清晰事实。
+4. 将不确定的重建细节放入 `source_notes`。
+5. 只有关键字段与现有数据冲突时才询问用户。
 
-### Example 2: Add a project from description
+### 示例 2：从描述中新增一个项目
 
-Input:
+输入：
 
 ```text
 把这个项目加到我的基础简历：我做了一个 AI 简历插件 SuperResume，主要实现了浏览器自动化 skill 和 profile-loader，用来保存简历 JSON。
 ```
 
-Behavior:
+处理方式：
 
-1. Use `profile-loader` to load base profile.
-2. Add or update `projects` entry for `SuperResume`.
-3. Capture technologies only if stated or already known from existing context.
-4. Ask for missing date/metrics if useful, but do not block writing the provided facts unless placement is ambiguous.
+1. 使用 `profile-loader` 加载基础 profile。
+2. 为 `SuperResume` 新增或更新 `projects` 条目。
+3. 只记录明确说明或现有上下文已知的 technologies。
+4. 日期/指标缺失时可建议补充，但除非归类有歧义，否则不要阻塞已提供事实的写入。
 
-### Example 3: Correct conflicting information
+### 示例 3：纠正冲突信息
 
-Input:
+输入：
 
 ```text
 把我的实习地点改成上海。
 ```
 
-Behavior:
+处理方式：
 
-- If there is one internship, update its location through `profile-loader`.
-- If there are multiple internships, ask which internship to modify.
-- If existing location is different, ask whether to replace it with 上海 or keep both with notes.
+- 如果只有一个实习，通过 `profile-loader` 更新其 location。
+- 如果有多个实习，询问要修改哪一个。
+- 如果现有 location 不同，询问是替换为上海，还是两者都保留并加备注。
 
-## Test Prompts
+## 测试提示词
 
-Use these prompts to test the skill manually:
+可使用以下提示词手动测试本技能：
 
 1. `这是我旧简历复制出来的内容，顺序有点乱：<paste messy resume text>，帮我写入基础简历档案。`
 2. `我补充一个项目：<natural language project description>，保存到我的基础简历。`

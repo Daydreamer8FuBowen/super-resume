@@ -1,114 +1,112 @@
 ---
 name: resume-visual
-description: Resume JSON visual renderer for SuperResume. MUST use this skill when the user wants to preview a resume profile as a styled HTML page, visualize base.json or a target profile, start a live-preview dev server, export resume to HTML, or see what their resume looks like. Triggers on requests like "预览我的简历", "render my resume", "show my resume", "生成简历页面", "打开简历预览", "visualize the resume JSON", or any workflow step that produces a resume JSON file and needs visual feedback.
+description: SuperResume 的简历 JSON 可视化渲染器。MUST use this skill when the user wants to preview a resume profile as a styled HTML page, visualize base.json or a target profile, start a live-preview dev server, export resume to HTML, or see what their resume looks like. 触发请求包括“预览我的简历”、“render my resume”、“show my resume”、“生成简历页面”、“打开简历预览”、“visualize the resume JSON”，以及任何已产出简历 JSON 且需要视觉反馈的工作流步骤。
 ---
 
-# Resume Visualizer
+# 简历可视化预览
 
-This skill renders a profile-loader JSON file (`base.json` or a target profile) into a polished, styled HTML resume page. It starts a dev server with live reload so you can tweak the JSON and see changes instantly.
+本技能会把 profile-loader 生成的 JSON 文件（`base.json` 或某个目标 profile）渲染为样式完整的 HTML 简历页面。它会启动带实时刷新的开发服务器，便于你调整 JSON 后立即看到变化。
 
-## Scope
+## 适用范围
 
-Use this skill to:
+以下情况应使用本技能：
 
-- Render `data/profiles/base.json` into a visual HTML resume for preview.
-- Render any target profile JSON (`data/profiles/targets/*.json`) into HTML.
-- Start a live-reload dev server that watches the JSON file and auto-refreshes the browser.
-- Export the resume as a self-contained HTML file (openable in any browser, printable as PDF).
-- Preview how changes to the profile JSON affect the final resume appearance.
+- 将 `data/profiles/base.json` 渲染为可预览的可视化 HTML 简历。
+- 将任意目标 profile JSON（`data/profiles/targets/*.json`）渲染为 HTML。
+- 启动实时刷新 dev server，监听 JSON 文件变化并自动刷新浏览器。
+- 导出自包含 HTML 文件（可在任意浏览器打开，也可打印为 PDF）。
+- 预览 profile JSON 的修改会如何影响最终简历外观。
 
-Do NOT use this skill to:
+以下情况不应使用本技能：
 
-- Edit or modify the profile JSON (use `profile-loader` or `base-profile-editor`).
-- Write resume content (use resume writing skills).
-- Judge resume quality (use review skills).
-- Create new resume templates (templates are HTML/CSS; editing them is a separate concern).
+- 编辑或修改 profile JSON（使用 `profile-loader` 或 `base-profile-editor`）。
+- 撰写简历内容（使用简历写作技能）。
+- 判断简历质量（使用评审技能）。
+- 创建新的简历模板（模板是 HTML/CSS，编辑模板属于另一类任务）。
 
-## Path Convention
+## 路径约定
 
-Two distinct locations for JSON files — do NOT mix them:
+JSON 文件有两类不同存放位置——不要混用：
 
-| Location | Directory | Purpose | Examples |
+| 位置 | 目录 | 用途 | 示例 |
 |----------|-----------|---------|----------|
-| **Plugin data** | `skills/resume-visualizer/` | Template metadata, sample/test data for the visualizer itself | `sample-base.json`, `templates/*/template.json` |
-| **User data** | `data/profiles/` (project root) | User's actual resume profiles — the source of truth | `base.json`, `targets/<company>-<role>.json` |
+| **插件数据** | `skills/resume-visualizer/` | visualizer 自身的模板元数据、示例/测试数据 | `sample-base.json`, `templates/*/template.json` |
+| **用户数据** | `data/profiles/`（项目根目录） | 用户真实简历 profiles——事实源 | `base.json`, `targets/<company>-<role>.json` |
 
-**Rules:**
-- The visualizer's own JSON files (samples, template configs) stay in the plugin directory — never write user data there.
-- User resume JSONs always live under `data/profiles/` in the project root — the visualizer reads them from there.
-- The visualizer script accepts any path as input, so user files can be anywhere, but the **convention** is `data/profiles/`.
+**规则：**
+- visualizer 自身的 JSON 文件（示例、模板配置）保留在插件目录中——绝不要把用户数据写到那里。
+- 用户简历 JSON 始终位于项目根目录的 `data/profiles/` 下——visualizer 从这里读取用户文件。
+- visualizer 脚本接受任意路径作为输入，因此用户文件可以在任何位置，但**约定**是 `data/profiles/`。
 
-## Stable Profile Resolution
+## 稳定的 Profile 解析规则
 
-Do not guess which profile JSON to visualize, and do not copy profile JSON into
-the visualizer folder. Resolve the input first:
+不要凭猜测决定要可视化哪个 profile JSON，也不要把 profile JSON 复制到 visualizer 目录中。先解析输入：
 
 ```bash
 node skills/resume-visualizer/scripts/resolve-profile.mjs [input] --json
 ```
 
-Supported inputs:
+支持的输入形式：
 
-| Input | Meaning |
+| 输入 | 含义 |
 |---|---|
-| omitted or `latest` | Newest `data/profiles/targets/*.json`, falling back to `data/profiles/base.json` |
+| omitted or `latest` | 最新的 `data/profiles/targets/*.json`；如果没有则回退到 `data/profiles/base.json` |
 | `base` | `data/profiles/base.json` |
 | `target:<slug>` | `data/profiles/targets/<slug>.json` |
-| `<path.json>` | Explicit JSON file |
+| `<path.json>` | 显式 JSON 文件 |
 
-The resolver validates the chosen profile and returns the exact
-`render-resume.mjs` command. Use that command for preview/export.
+解析器会校验所选 profile，并返回精确的 `render-resume.mjs` 命令。预览或导出时使用该命令。
 
-## How It Works
+## 工作原理
 
-The visualizer script reads a profile JSON, transforms it into a view model, renders it through a Handlebars-compatible template engine, and writes a self-contained HTML file. If `--no-serve` is not passed, it starts a local HTTP server with Server-Sent Events (SSE) for live reload.
+可视化脚本会读取 profile JSON，将其转换为视图模型，再通过兼容 Handlebars 的模板引擎渲染并写入一个自包含 HTML 文件。如果没有传入 `--no-serve`，它会启动本地 HTTP 服务，并通过 Server-Sent Events (SSE) 实现实时刷新。
 
-### Command
+### 命令格式
 
 ```bash
 node skills/resume-visualizer/scripts/render-resume.mjs <input.json> [output.html] [options]
 ```
 
-### Options
+### 参数说明
 
-| Flag | Description |
+| 参数 | 说明 |
 |---|---|
-| `--port, -p <N>` | Dev server port (default: 3000, auto-increments if busy) |
-| `--no-serve` | Write HTML file only, do not start the dev server |
-| `--open, -o` | Automatically open the browser when the server starts |
-| `--template, -t <name>` | Template to use (default: `modern-clean`) |
-| `--watch, -w <path>` | Additional file or glob to watch for changes |
+| `--port, -p <N>` | Dev server 端口（默认：3000；忙碌时自动递增） |
+| `--no-serve` | 只写入 HTML 文件，不启动 dev server |
+| `--open, -o` | server 启动后自动打开浏览器 |
+| `--template, -t <name>` | 使用的模板（默认：`modern-clean`） |
+| `--watch, -w <path>` | 额外监听的文件或 glob |
 
-### Examples
+### 使用示例
 
 ```bash
-# Preview the base profile with live reload
+# 使用实时刷新预览基础 profile
 node skills/resume-visualizer/scripts/render-resume.mjs data/profiles/base.json resume-preview.html
 
-# Quick test with sample data
+# 使用示例数据快速测试
 node skills/resume-visualizer/scripts/render-resume.mjs skills/resume-visualizer/sample-base.json
 
-# Export only (no server)
+# 只导出（不启动 server）
 node skills/resume-visualizer/scripts/render-resume.mjs base.json export.html --no-serve
 
-# Custom port, auto-open browser
+# 自定义端口并自动打开浏览器
 node skills/resume-visualizer/scripts/render-resume.mjs base.json preview.html --port 8080 --open
 ```
 
-## Workflow
+## 推荐流程
 
-### 1. Resolve the input JSON path
+### 1. 解析输入 JSON 路径
 
-Check the user's request and context:
+根据用户请求和上下文判断：
 
-- If the user says "preview my resume" or similar without specifying a file, run `resolve-profile.mjs latest --json`.
-- If the user names a specific profile, run `resolve-profile.mjs target:<slug> --json` or pass an explicit JSON path.
-- If a profile was just created or updated by a previous workflow step, pass that exact file path to `resolve-profile.mjs`.
-- If no profile JSON exists yet, tell the user to create one first (via `base-profile-editor`).
+- 如果用户说“preview my resume”或类似请求但没有指定文件，运行 `resolve-profile.mjs latest --json`。
+- 如果用户指定了某个 profile，运行 `resolve-profile.mjs target:<slug> --json` 或传入显式 JSON 路径。
+- 如果 profile 刚由上一个工作流步骤创建或更新，将那个精确文件路径传给 `resolve-profile.mjs`。
+- 如果还没有 profile JSON，告诉用户先通过 `base-profile-editor` 创建。
 
-### 1.5. Photo Check (non-mandatory)
+### 1.5. 头像检查（非必需）
 
-**Before running the visualizer**, check for a resume photo and inform the user:
+**运行 visualizer 前**，检查是否存在简历头像并提示用户：
 
 ```
 📷 简历头像提示：
@@ -116,21 +114,21 @@ Check the user's request and context:
    当前状态：<检测到 / 未检测到>
 ```
 
-- If `profile.png` (or `profile.jpg`) exists in the current working directory → the visualizer auto-detects it, converts to base64, and injects it into the resume.
-- If no photo file is found → display the reminder once, then proceed. The user can add one later and the live-reload will pick it up.
-- The user can also explicitly request: "帮我添加简历头像" — then guide them to place `profile.png` in the project directory and re-run the visualizer.
-- The photo file is automatically copied to `skills/resume-visualizer/` for persistence.
+- 如果当前工作目录存在 `profile.png`（或 `profile.jpg`）→ visualizer 会自动检测、转换为 base64，并注入简历。
+- 如果没有找到头像文件 → 只提示一次，然后继续流程。用户后续添加头像后，实时刷新会自动捕获。
+- 用户也可以明确请求：“帮我添加简历头像”——此时引导他们把 `profile.png` 放到项目目录并重新运行 visualizer。
+- 头像文件会自动复制到 `skills/resume-visualizer/`，用于持久保存。
 
-This step is **non-blocking** — the visualizer works fine without a photo.
+这一步**不会阻塞流程**——没有头像时 visualizer 也能正常工作。
 
-### 2. Choose the output path
+### 2. 选择输出路径
 
-- Default: `<input-basename>-preview.html` in the current working directory.
-- The user may specify a custom path.
+- 默认：当前工作目录下的 `<input-basename>-preview.html`。
+- 用户可以指定自定义路径。
 
-### 3. Run the visualizer
+### 3. 运行可视化器
 
-Execute the render command returned by `resolve-profile.mjs`. Report the output:
+执行 `resolve-profile.mjs` 返回的渲染命令，并报告输出：
 
 ```
 ✔ Parsed base.json (5.2 KB)
@@ -142,22 +140,22 @@ Watching for changes...
 Press Ctrl+C to stop
 ```
 
-### 4. Tell the user what to do
+### 4. 告知用户下一步操作
 
-- Share the URL if the dev server is running.
-- If `--no-serve` was used, tell the user to open the HTML file in their browser.
-- Remind them that they can print to PDF from the browser (Ctrl+P / Cmd+P).
+- 如果 dev server 正在运行，分享 URL。
+- 如果使用了 `--no-serve`，告诉用户在浏览器中打开 HTML 文件。
+- 提醒用户可以通过浏览器打印为 PDF（Ctrl+P / Cmd+P）。
 
-## Available Templates
+## 可用模板
 
-| Template | Layout | Description |
+| 模板 | 布局 | 说明 |
 |---|---|---|
-| `modern-clean` | Single column | Clean centered layout, photo support, ATS-friendly, print-optimized (default) |
-| `modern-professional` | Double column | Left sidebar (photo, contact, skills, education) + right main (experience, projects). Professional and compact. |
+| `modern-clean` | 单栏 | 简洁居中布局，支持头像，ATS 友好，已优化打印效果（默认） |
+| `modern-professional` | 双栏 | 左侧栏（头像、联系方式、技能、教育）+ 右侧主体（经历、项目）。专业、紧凑。 |
 
-### Photo Support
+### 头像支持
 
-Both templates support an optional `photo` field in `personal_info`:
+两个模板都支持在 `personal_info` 中使用可选的 `photo` 字段：
 
 ```json
 "personal_info": {
@@ -166,26 +164,26 @@ Both templates support an optional `photo` field in `personal_info`:
 }
 ```
 
-The `photo` value can be:
-- A **URL** (e.g., `"https://example.com/photo.jpg"`)
-- A **base64 data URI** (e.g., `"data:image/png;base64,..."`)
-- **Omitted** — then the visualizer auto-detects `profile.png` in the working directory
+`photo` 字段支持以下形式：
+- **URL**（例如：`"https://example.com/photo.jpg"`）
+- **base64 data URI**（例如：`"data:image/png;base64,..."`）
+- **省略**——visualizer 会自动检测工作目录中的 `profile.png`
 
-**Local file convention (recommended):**
+**本地文件约定（推荐）：**
 
-Place a `profile.png` (or `profile.jpg`) in the project root directory. The visualizer automatically:
-1. Detects the file at startup
-2. Reads it and converts to a base64 data URI
-3. Injects it into `personal_info.photo` (only if the field is empty)
-4. Copies it to `skills/resume-visualizer/` for persistence
+在项目根目录放置 `profile.png`（或 `profile.jpg`）。visualizer 会自动：
+1. 启动时检测该文件
+2. 读取并转换为 base64 data URI
+3. 注入到 `personal_info.photo`（仅当该字段为空时）
+4. 复制到 `skills/resume-visualizer/` 用于持久保存
 
-This is non-mandatory — when no photo is found and `photo` is empty, a placeholder icon is shown (double-column template) or the header renders without a photo (single-column template).
+这不是必需项——当没有找到头像且 `photo` 为空时，双栏模板会显示占位图标，单栏模板会渲染无头像页头。
 
-To see what templates are available, list the directories under `skills/resume-visualizer/templates/`.
+如需查看可用模板，请列出 `skills/resume-visualizer/templates/` 下的目录。
 
-## Template Structure
+## 模板结构
 
-Each template is a directory under `templates/`:
+每个模板都是 `templates/` 下的一个目录：
 
 ```
 templates/<template-name>/
@@ -200,39 +198,39 @@ templates/<template-name>/
     └── skills.hbs
 ```
 
-Templates use a Handlebars-compatible syntax. See existing templates for the supported subset.
+模板使用兼容 Handlebars 的语法。支持的语法子集请参考现有模板。
 
-## Data Mapping
+## 数据映射
 
-The visualizer maps `base.json` sections to resume display sections:
+visualizer 将 `base.json` 的 section 映射到简历展示 section：
 
-| JSON section | Resume section | Notes |
+| JSON section | 简历展示区块 | 说明 |
 |---|---|---|
-| `personal_info` | Header (name, headline, contact, links) | Always shown |
-| `career_objective.summary_facts` | Summary | Shown only if non-empty |
-| `skills` | Skills (tag cloud by category) | Shown only if any category has items |
-| `work_experience` | Experience | Sorted by date DESC; skipped if all null |
-| `internships` | Internships | Uses same style as Experience |
-| `projects` | Projects | Shows problem, actions, results, tech |
-| `education` | Education | Shows degree, school, GPA, honors |
-| `certifications` | Certifications | Simple list |
-| `awards` | Awards | Simple list |
-| `languages` | Languages | Simple list |
+| `personal_info` | Header（姓名、headline、联系方式、链接） | 始终显示 |
+| `career_objective.summary_facts` | Summary | 仅在非空时显示 |
+| `skills` | Skills（按分类展示 tag cloud） | 仅当任意分类有内容时显示 |
+| `work_experience` | Experience | 按日期倒序排序；全为空则跳过 |
+| `internships` | Internships | 使用与 Experience 相同的样式 |
+| `projects` | Projects | 显示问题、动作、结果、技术 |
+| `education` | Education | 显示学历、学校、GPA、荣誉 |
+| `certifications` | Certifications | 简单列表 |
+| `awards` | Awards | 简单列表 |
+| `languages` | Languages | 简单列表 |
 
-Metadata fields (`raw_sources`, `source_notes`, `metadata`, `resume_preferences`, `confidence`) are not rendered.
+元数据字段（`raw_sources`、`source_notes`、`metadata`、`resume_preferences`、`confidence`）不会被渲染。
 
-## Limitations
+## 限制说明
 
-- The built-in template engine supports a subset of Handlebars syntax (`{{var}}`, `{{{var}}}`, `{{#if}}`, `{{#each}}`, `{{> partial}}`, `{{join}}`). Full Handlebars helpers are not supported.
-- Live reload watches the input JSON file and the active template directory. Changes to external CSS files or images are not watched unless passed via `--watch`.
-- The dev server serves ONLY the generated HTML file and the SSE endpoint. It is not a general-purpose static file server.
+- 内置模板引擎只支持 Handlebars 语法子集（`{{var}}`、`{{{var}}}`、`{{#if}}`、`{{#each}}`、`{{> partial}}`、`{{join}}`）。不支持完整 Handlebars helpers。
+- 实时刷新会监听输入 JSON 文件和当前激活的模板目录。外部 CSS 文件或图片变化不会被监听，除非通过 `--watch` 传入。
+- dev server 只提供生成的 HTML 文件和 SSE endpoint。它不是通用静态文件服务器。
 
-## Troubleshooting
+## 故障排查
 
-| Symptom | Likely cause | Fix |
+| 现象 | 可能原因 | 解决办法 |
 |---|---|---|
-| "Input file not found" | Wrong path or missing profile | Check path; create profile via `base-profile-editor` |
-| "Template not found" | Wrong `--template` name | List `templates/` directory for valid names |
-| Port already in use | Another instance running | The script auto-increments the port; check the console output |
-| Blank page in browser | Empty or all-null profile data | Fill in profile data via `base-profile-editor` |
-| Browser doesn't reload on change | File watcher limitation on your OS | Refresh manually (F5) |
+| "Input file not found" | 路径错误或 profile 缺失 | 检查路径；通过 `base-profile-editor` 创建 profile |
+| "Template not found" | `--template` 名称错误 | 列出 `templates/` 目录查看有效名称 |
+| 端口已占用 | 另一个实例正在运行 | 脚本会自动递增端口；查看控制台输出 |
+| 浏览器空白页 | profile 数据为空或全是 null | 通过 `base-profile-editor` 填写 profile 数据 |
+| 文件变化后浏览器不刷新 | 操作系统文件监听限制 | 手动刷新（F5） |

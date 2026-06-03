@@ -1,0 +1,3 @@
+[mcp_servers.patchright]
+command = "npx"
+args = ["patchright-mcp@latest"]

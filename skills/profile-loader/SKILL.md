@@ -1,115 +1,112 @@
 ---
 name: profile-loader
-description: Resume profile JSON loader and persistence protocol for SuperResume. Low-level persistence skill — provides schema, storage paths, and read/write/merge operations for resume profile JSON files. Called internally by base-profile-editor, resume-beautify, and super-resume. Do NOT use for workflow-level resume operations; use /super-resume for the full workflow.
+description: SuperResume 的简历 profile JSON 读取与持久化协议技能。底层持久化层——提供 schema、存储路径以及简历 profile JSON 的读写/合并操作，供 base-profile-editor、resume-beautify 和 super-resume 内部调用。不要用于工作流级简历操作；完整流程请使用 /super-resume。
 ---
 
-# Profile Loader
+# Profile Loader 持久化协议
 
-This skill defines how SuperResume stores, reads, extracts, and updates resume profile JSON files. It is a persistence and schema skill: it keeps resume facts in a stable structure so other resume skills can write, tailor, review, or format resumes without losing source information.
+本技能定义 SuperResume 如何存储、读取、提取和更新简历 profile JSON 文件。它是一个持久化与 schema 层技能：把简历事实保存在稳定结构中，让其他简历技能在写作、定制、审查或格式化时复用这些事实，同时不丢失来源信息。
 
-## Scope
+## 适用范围
 
-Use this skill to:
+以下情况应使用本技能：
 
-- Extract resume facts from pasted text, uploaded resumes, notes, chats, or existing profile JSON.
-- Read the base profile or a targeted profile before resume work that depends on saved facts.
-- Write new facts into the correct JSON profile.
-- Merge updates into an existing profile without deleting unknown or unrelated information.
-- Create targeted JSON profiles for a specific company, role, job description, or resume version.
-- Explain where profile JSON files live and which file should be used next.
+- 从粘贴文本、上传简历、笔记、聊天记录或现有 profile JSON 中提取简历事实。
+- 在依赖已保存事实的简历工作开始前，读取基础档案或目标档案。
+- 将新事实写入正确的 JSON profile。
+- 将更新合并到现有 profile 中，同时不删除未知或无关信息。
+- 为特定公司、岗位、JD 或简历版本创建目标 JSON profile。
+- 说明 profile JSON 文件存放在哪里，以及下一步应该使用哪个文件。
 
-Do not use this skill to:
+以下情况不应使用本技能：
 
-- Invent experience, metrics, dates, schools, companies, certificates, or skills.
-- Write the final polished resume content by itself.
-- Judge resume quality by itself.
-- Format a resume document by itself.
-- Scrape job descriptions by itself.
+- 编造经历、指标、日期、学校、公司、证书或技能。
+- 单独撰写最终润色后的简历内容。
+- 单独判断简历质量。
+- 单独格式化简历文档。
+- 单独抓取职位描述。
 
-If a task combines persistence with writing/reviewing/tailoring, use this skill first to load or update profile JSON, then hand off to the relevant writing/review/tailoring workflow.
+如果任务既涉及持久化，又涉及写作、审查或定制，应先使用本技能加载或更新 profile JSON，再交给对应的写作/审查/定制流程。
 
-## Tool Restrictions
+## 工具限制
 
-This skill is allowed to read profile JSON files and to run only the bundled
-profile persistence tools. Avoid ad hoc shell pipelines or external JSON
-rewriters.
+本技能只允许读取 profile JSON 文件，并且只运行仓库内置的 profile 持久化工具。避免使用临时 shell 管道或外部 JSON 改写器。
 
-| Allowed | Forbidden |
+| 允许 | 禁止 |
 |---------|-----------|
-| Read profile JSON files | Unrelated shell commands |
-| Create a small patch JSON file | `jq`, Python one-off rewrites, or custom shell text manipulation |
-| Run `node skills/profile-loader/profile-store.mjs ...` | Editing large profile JSON by hand when a patch is sufficient |
-| Run `node skills/profile-loader/validate-profile.mjs ...` | Any scraper, browser, or resume-writing action |
+| 读取 profile JSON 文件 | 无关 shell 命令 |
+| 创建小型 patch JSON 文件 | `jq`、一次性 Python 改写脚本或自定义 shell 文本处理 |
+| 运行 `node skills/profile-loader/profile-store.mjs ...` | 当小 patch 足够时，手工编辑大型 profile JSON |
+| 运行 `node skills/profile-loader/validate-profile.mjs ...` | 任何抓取器、浏览器操作或简历写作动作 |
 
-**Rules:**
-- Use `profile-store.mjs` for writes whenever possible.
-- Use `validate-profile.mjs` for any write path not handled by `profile-store.mjs`.
-- Do not invoke unrelated commands or other skills from this persistence layer.
-- When conflicts affect important facts, ask before writing the conflicting field.
+**规则：**
+- 写入时尽可能使用 `profile-store.mjs`。
+- 凡是没有通过 `profile-store.mjs` 处理的写入路径，都要使用 `validate-profile.mjs` 校验。
+- 不要从这个持久化层调用无关命令或其他技能。
+- 当冲突影响重要事实时，写入冲突字段前必须先询问用户。
 
-## Stable Persistence Tooling
+## 稳定的持久化工具链
 
-Large resume JSON files are error-prone when an agent rewrites the whole file.
-Use the bundled persistence tool whenever possible:
+大型简历 JSON 文件由 Agent 整体重写时很容易出错。优先使用仓库内置的持久化工具：
 
 ```bash
-# Merge a small patch into the base profile, then validate automatically.
+# 将一个小 patch 合并进基础 profile，并自动校验。
 node skills/profile-loader/profile-store.mjs merge --profile base --patch patch.json
 
-# Merge a small patch into a target profile, then validate automatically.
+# 将一个小 patch 合并进目标 profile，并自动校验。
 node skills/profile-loader/profile-store.mjs merge --profile target --id <company-role> --patch patch.json
 
-# Merge into an explicit file.
+# 合并到显式指定的文件。
 node skills/profile-loader/profile-store.mjs merge --file data/profiles/base.json --schema base --patch patch.json
 ```
 
-**Required behavior for agents:**
+**对 Agent 的强制要求：**
 
-- Produce the smallest possible patch JSON instead of rewriting a whole profile.
-- Let `profile-store.mjs` merge, format, write atomically, and validate.
-- If validation fails, fix the patch and rerun the same command.
-- Treat `null` in a patch as deletion. Use it only when deleting a field is intended.
-- Arrays in a patch replace arrays in the profile; include the full intended array when changing one.
+- 生成尽可能小的 patch JSON，不要重写整个 profile。
+- 让 `profile-store.mjs` 负责合并、格式化、原子写入和校验。
+- 如果校验失败，修复 patch 后重新运行同一条命令。
+- patch 中的 `null` 表示删除；只有确实要删除字段时才使用。
+- patch 中的数组会替换 profile 中的数组；修改数组时必须包含完整的目标数组。
 
-## JSON Validation
+## JSON 校验
 
-Every JSON write operation MUST be followed by validation using the bundled script:
+每次 JSON 写入后，都必须使用内置脚本执行校验：
 
 ```
 node skills/profile-loader/validate-profile.mjs <file.json> --schema <base|target>
 ```
 
-| File type | Schema flag |
+| 文件类型 | Schema 参数 |
 |-----------|-------------|
 | `data/profiles/base.json` | `--schema base` |
 | `data/profiles/targets/*.json` | `--schema target` |
 
-**Validation rules:**
-- **Before write:** Not required (data is being constructed).
-- **After write:** MANDATORY — the caller runs the validator. If validation fails (exit code 1), the write MUST be fixed and re-validated before proceeding.
-- **Warnings** (💡) are advisory and do not block writes. **Errors** (❌) are blocking and must be fixed.
+**校验规则：**
+- **写入前：** 不强制要求（数据还在构造中）。
+- **写入后：** 强制执行——调用方必须运行校验器。如果校验失败（退出码 1），必须修复写入内容并重新校验后才能继续。
+- **Warnings**（💡）是建议项，不阻塞写入。**Errors**（❌）是阻塞项，必须修复。
 
-**Example validation flow:**
+**示例校验流程：**
 
 ```
-1. This skill writes base.json via Write/Edit tool
-2. Caller runs: node skills/profile-loader/validate-profile.mjs data/profiles/base.json --schema base
-3. If ❌ → read errors, fix the JSON, re-write, re-validate
-4. If ✅ → persist complete
+1. 本技能通过 Write/Edit tool 写入 base.json
+2. 调用方运行：node skills/profile-loader/validate-profile.mjs data/profiles/base.json --schema base
+3. 如果 ❌ → 读取错误，修复 JSON，重新写入，重新校验
+4. 如果 ✅ → 持久化完成
 ```
 
-The validator checks:
-- JSON syntax (parseable, valid UTF-8, no trailing commas, no comments)
-- Required top-level keys per schema type
-- Field types (string vs array vs object)
-- Date format compliance (YYYY-MM-DD)
-- ID uniqueness within and across sections
-- `confidence` field enum values
-- Known skill category names
+校验器会检查：
+- JSON 语法（可解析、有效 UTF-8、无尾随逗号、无注释）
+- 每类 schema 要求的顶层 key
+- 字段类型（string / array / object）
+- 日期格式是否符合 YYYY-MM-DD
+- 同一 section 内以及跨 section 的 ID 唯一性
+- `confidence` 字段枚举值
+- 已知技能分类名称
 
-## Storage Layout
+## 存储结构
 
-User resume profiles are stored under the project working directory (NOT inside the plugin's `skills/` folder):
+用户简历 profile 存放在项目工作目录下，而不是插件的 `skills/` 目录中：
 
 ```text
 <项目根目录>/
@@ -120,74 +117,73 @@ User resume profiles are stored under the project working directory (NOT inside 
         └── <company>-<role>-<date>.json
 ```
 
-> This is distinct from plugin-internal JSON files (e.g., `skills/resume-visualizer/sample-base.json` and template metadata), which are part of the visualizer itself and never contain user data.
+> 这与插件内部使用的 JSON 文件不同（例如 `skills/resume-visualizer/sample-base.json` 和模板元数据）。插件内部 JSON 属于 visualizer 自身，绝不包含用户数据。
 
-### File Meanings
+### 文件含义
 
-| File | Meaning | Use when |
+| 文件 | 含义 | 适用场景 |
 |---|---|---|
-| `data/profiles/base.json` | The most complete, direct, fact-preserving source profile. | The user provides new resume facts, asks to save information, or wants a general resume source of truth. |
-| `data/profiles/targets/<company>-<role>.json` | A tailored profile derived from `base.json` for a specific company/role/job description. | The user asks to adapt, optimize, or maintain resume content for a specific target. |
+| `data/profiles/base.json` | 最完整、直接、保留事实的来源 profile。 | 用户提供新的简历事实、要求保存信息，或需要一个通用简历事实源。 |
+| `data/profiles/targets/<company>-<role>.json` | 从 `base.json` 派生、面向特定公司/岗位/JD 的定制 profile。 | 用户要求为特定目标适配、优化或维护简历内容。 |
 
-The base profile is the source of truth. Targeted profiles may select, reorder, emphasize, or rewrite positioning, but they must not change facts. When a target profile makes a claim, that claim should be traceable to `base.json` or to a clearly recorded user-provided source.
+基础 profile 是唯一事实源。目标 profile 可以筛选、重排、强调或重写定位表达，但不能改变事实。目标 profile 中的每条 claim 都应能追溯到 `base.json`，或追溯到清楚记录的用户来源。
 
-## Evidence Contract
+## 证据约定
 
-Use these compact labels for strong resume claims:
+对高强度简历 claim 使用以下简洁标签：
 
-| Field | Values |
+| 字段 | 取值 |
 |---|---|
 | `claim_level` | `C0` aware/participated, `C1` owned module, `C2` designed/optimized, `C3` measured impact |
 | `truth_status` | `supported`, `careful`, `needs_evidence`, `unsupported`, `unknown` |
 | `interview_risk` | `low`, `medium`, `high` |
 
-Do not write C3 impact claims without metric evidence. Use `safe_wording` when
-the current evidence only supports a weaker claim.
+没有指标证据时，不要写入 C3 级影响类 claim。若当前证据只支持更保守的说法，应使用 `safe_wording`。
 
-## Read / Write Protocol
+## 读写协议
 
-Follow this protocol whenever profile JSON is involved.
+只要涉及 profile JSON，就遵循以下协议。
 
-1. **Classify the request**
-   - Use `base.json` for general facts, raw resume intake, and long-term source-of-truth updates.
-   - Use `targets/<company>-<role>.json` for company/role-specific adaptations.
-   - If the user names a company or role but no target profile exists, create one derived from `base.json` when enough information is available.
+1. **判断请求类型**
+   - 通用事实、原始简历录入、长期事实源更新使用 `base.json`。
+   - 公司/岗位特定适配使用 `targets/<company>-<role>.json`。
+   - 如果用户提到公司或岗位，但目标 profile 不存在，并且信息足够，则创建一个从 `base.json` 派生的目标 profile。
 
-2. **Read before modifying**
-   - Before updating an existing JSON file, read it first.
-   - Preserve fields that are not related to the current update.
-   - If the file does not exist, create it from the schema below.
+2. **修改前先读取**
+   - 更新现有 JSON 文件前必须先读取它。
+   - 保留与本次更新无关的字段。
+   - 如果文件不存在，按下面的 schema 创建。
 
-3. **Extract facts conservatively**
-   - Keep raw factual content as close to the source as possible.
-   - Use `null`, empty arrays, or `confidence: "unknown"` for missing information.
-   - Do not infer dates, company names, degrees, metrics, or technologies unless the source clearly states them.
+3. **保守提取事实**
+   - 原始事实内容尽量贴近来源。
+   - 缺失信息使用 `null`、空数组或 `confidence: "unknown"`。
+   - 除非来源明确说明，不要推断日期、公司名、学历、指标或技术。
 
-4. **Merge instead of replacing**
-   - Add new entries when they describe distinct experiences.
-   - Update existing entries when the user clarifies the same experience.
-   - Keep previous raw source notes unless the user explicitly asks to remove them.
+4. **优先合并，不要整体替换**
+   - 描述不同经历时新增条目。
+   - 用户澄清同一段经历时更新现有条目。
+   - 除非用户明确要求删除，否则保留既有原始来源备注。
 
-5. **Write through the persistence tool**
-   - Prefer `profile-store.mjs` with a small patch over a full-file rewrite.
-   - The tool writes atomically and runs validation automatically.
-   - If the caller writes by any other route, it MUST run `validate-profile.mjs` manually.
+5. **通过持久化工具写入**
+   - 优先使用 `profile-store.mjs` + 小 patch，不要整文件重写。
+   - 该工具会原子写入并自动校验。
+   - 如果调用方通过其他方式写入，必须手动运行 `validate-profile.mjs`。
 
-6. **Write valid JSON**
-   - JSON must be parseable.
-   - Use double quotes.
-   - Do not include comments in JSON files.
-   - Keep stable IDs for repeatable entries when possible.
-   - After writing, the caller MUST run `node skills/profile-loader/validate-profile.mjs <file> --schema <base|target>`. Validation errors (❌) are blocking.
+6. **写入合法 JSON**
+   - JSON 必须可解析。
+   - 使用双引号。
+   - JSON 文件中不得包含注释。
+   - 可重复引用的条目尽量保持稳定 ID。
+   - 写入后，调用方必须运行 `node skills/profile-loader/validate-profile.mjs <file> --schema <base|target>`。校验错误（❌）是阻塞项。
 
-6. **Report the persistence result**
-   - State which file was read or written.
-   - Summarize added, updated, and unchanged sections.
-   - List missing or uncertain fields that may need user clarification.
+6. **汇报持久化结果**
+   - 说明读取或写入了哪个文件。
+   - 汇总新增、更新和未变化的 section。
+   - 列出仍缺失或不确定、可能需要用户澄清的字段。
 
-## Base Profile Schema
+## 基础 Profile Schema
 
-Use this structure for `data/profiles/base.json`.
+对 `data/profiles/base.json` 使用如下结构。
 
 ```json
 {
@@ -355,9 +351,9 @@ Use this structure for `data/profiles/base.json`.
 }
 ```
 
-## Target Profile Schema
+## 目标 Profile Schema
 
-Use this structure for `data/profiles/targets/<company>-<role>.json`.
+对 `data/profiles/targets/<company>-<role>.json` 使用如下结构。
 
 ```json
 {
@@ -416,80 +412,80 @@ Use this structure for `data/profiles/targets/<company>-<role>.json`.
 }
 ```
 
-## Extraction Rules
+## 提取规则
 
-When converting resume content into JSON:
+将简历内容转换为 JSON 时：
 
-- Split facts into the most specific matching section.
-- Preserve both Chinese and English names or titles if provided.
-- Keep dates as written when exact normalization is uncertain.
-- Store measurable outcomes in `achievements[].metric` or `projects[].metrics`.
-- Store evidence or source wording in `source_notes` when useful for later verification.
-- If a bullet combines action, technology, and result, split them into `actions`, `technologies`, and `results` where possible.
-- If a detail is important but does not fit the schema, place it in `metadata.notes` or the closest entry's `source_notes` rather than dropping it.
+- 将事实拆分到最具体的匹配 section。
+- 如果同时提供了中文和英文姓名或标题，都要保留。
+- 当日期无法确定如何规范化时，按原文保留。
+- 可量化结果写入 `achievements[].metric` 或 `projects[].metrics`。
+- 对后续验证有帮助的证据或来源措辞写入 `source_notes`。
+- 如果一个 bullet 同时包含动作、技术和结果，尽可能拆成 `actions`、`technologies` 和 `results`。
+- 如果某个细节很重要但不适配 schema，放入 `metadata.notes` 或最接近条目的 `source_notes`，不要丢弃。
 
-## Update Examples
+## 更新示例
 
-### Example 1: Save a new project to the base profile
+### 示例 1：保存一个新项目到基础 profile
 
-Input:
+输入：
 
 ```text
 保存这个项目：SuperResume，Claude Code 插件，负责简历写作、评价和岗位适配。我做了 browser skill 和 profile-loader skill。
 ```
 
-Action:
+处理动作：
 
-1. Read `data/profiles/base.json` if it exists.
-2. Add or update an entry in `projects`.
-3. Write `data/profiles/base.json`.
-4. Report the changed project fields and missing details such as dates, metrics, and technologies.
+1. 如果 `data/profiles/base.json` 存在，先读取它。
+2. 在 `projects` 中新增或更新一个条目。
+3. 写入 `data/profiles/base.json`。
+4. 汇报变更的项目字段，以及缺失的日期、指标、技术等细节。
 
-### Example 2: Create a targeted profile
+### 示例 2：创建一个目标 profile
 
-Input:
+输入：
 
 ```text
 基于我的基础简历，为字节跳动前端开发岗位维护一个 JSON 版本。
 ```
 
-Action:
+处理动作：
 
-1. Read `data/profiles/base.json`.
-2. Create `data/profiles/targets/bytedance-frontend-developer.json`.
-3. Fill `target.company`, `target.role`, selected IDs, keywords, and adaptation notes.
-4. Do not invent missing job description details; ask for the JD if needed.
+1. 读取 `data/profiles/base.json`。
+2. 创建 `data/profiles/targets/bytedance-frontend-developer.json`。
+3. 填写 `target.company`、`target.role`、选中的 ID、关键词和适配备注。
+4. 不要编造缺失的 JD 细节；如有需要，向用户索要 JD。
 
-### Example 3: Merge clarified information
+### 示例 3：合并澄清后的信息
 
-Input:
+输入：
 
 ```text
 刚才那个实习是 2025 年 6 月到 2025 年 9 月，在上海，不是北京。
 ```
 
-Action:
+处理动作：
 
-1. Identify the likely internship entry.
-2. Read the current profile JSON.
-3. Update only `start_date`, `end_date`, and `location` for that entry.
-4. Preserve unrelated responsibilities and achievements.
-5. If multiple entries could match, ask the user which one before writing.
+1. 找到最可能对应的实习条目。
+2. 读取当前 profile JSON。
+3. 只更新该条目的 `start_date`、`end_date` 和 `location`。
+4. 保留无关的职责和成果。
+5. 如果多个条目都可能匹配，写入前先询问用户是哪一个。
 
-## Ambiguity Handling
+## 歧义处理
 
-Ask a short clarification before writing when:
+以下情况中，写入前应先进行简短澄清：
 
-- Multiple existing entries could match the user's update.
-- The user wants a target profile but company or role is missing.
-- A fact would overwrite a conflicting existing value.
-- The source suggests a sensitive or high-impact claim without enough evidence.
+- 多个现有条目都可能匹配用户的更新。
+- 用户想创建目标 profile，但缺少公司或岗位。
+- 某个事实会覆盖冲突的现有值。
+- 来源暗示敏感或高影响 claim，但证据不足。
 
-Otherwise, write the best structured version and mark uncertain fields clearly.
+除此之外，应写入当前最合理的结构化版本，并清楚标注不确定字段。
 
-## Completion Message
+## 完成消息
 
-After any read/write operation, respond with this structure:
+任何读写操作后，按以下结构回复：
 
 ```text
 已处理 profile JSON。

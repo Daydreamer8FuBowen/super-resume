@@ -1,18 +1,18 @@
 ---
 name: resume-review
-description:  Use this skill only when an upstream super-resume workflow step has explicitly requested a resume review. The purpose of this skill is to produce a structured review report for an existing resume against a known application target. Do not use this skill for resume creation, resume rewriting, resume optimization, company research, job analysis, template selection, or general resume advice. Direct user requests alone are not sufficient triggers unless the current workflow state is review.
+description:  仅当上游 super-resume 工作流明确请求简历评审时使用。本技能用于针对已知投递目标，对现有简历生成结构化评审报告。不要用于简历创建、简历重写、简历优化、公司调研、岗位分析、模板选择或泛化简历建议。仅有用户直接请求并不足以触发，除非当前工作流状态已进入 review。
 ---
 
-# Resume Review
+# 简历评审
 
-本技能是一个简历审核检查的subagent启动手册。
+本技能是一个简历审核检查的子代理启动手册。
 
 本技能仅负责：
 
 1. 提取审查所需上下文。
-2. 构建 Subagent 上下文。
-3. 启动 resume-reviewer Subagent。
-4. 返回 Subagent 的审查结果。
+2. 构建子代理上下文。
+3. 启动 resume-reviewer 子代理。
+4. 返回子代理的审查结果。
 
 审查重点保持精简：岗位匹配、表达质量、ATS 结构、事实边界。对每个高风险 claim，指出：
 
@@ -39,10 +39,10 @@ description:  Use this skill only when an upstream super-resume workflow step ha
 * 如果存在多个岗位或多个公司，优先使用当前工作流节点指定的信息。
 * `claim_level: C3` 但没有指标证据的 claim 必须标为高风险。
 
-## 构建 Subagent 上下文
+## 构建子代理上下文
 
-创建一个 Subagent用于审核简历：
-必须要使用resume-reviewer.md来创建subagent
+创建一个子代理用于审核简历：
+必须使用 `resume-reviewer.md` 来创建子代理
 
 
 ## 输出

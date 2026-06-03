@@ -19,3 +19,11 @@ Thumbs.db
 
 # Node
 node_modules/
+
+# Skill images
+skills/**/*.png
+skills/**/*.jpg
+skills/**/*.jpeg
+skills/**/*.gif
+skills/**/*.webp
+skills/**/*.svg
